@@ -3,6 +3,12 @@ Step 2: Environment Report
 """
 import streamlit as st
 
+st.set_page_config(
+    page_title="Environment",
+    page_icon="🌍",
+    layout="wide"
+)
+
 st.title("Step 2: Environment Report")
 
 st.divider()

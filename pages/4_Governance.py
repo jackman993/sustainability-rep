@@ -3,6 +3,12 @@ Step 4: Governance & Social Report
 """
 import streamlit as st
 
+st.set_page_config(
+    page_title="Governance",
+    page_icon="⚖️",
+    layout="wide"
+)
+
 st.title("Step 4: Governance & Social Report")
 
 st.divider()

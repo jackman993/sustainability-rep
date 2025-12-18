@@ -3,6 +3,12 @@ Step 1: Carbon Emission & TCFD
 """
 import streamlit as st
 
+st.set_page_config(
+    page_title="Carbon & TCFD",
+    page_icon="🌱",
+    layout="wide"
+)
+
 st.title("Step 1: Carbon Emission & TCFD")
 
 st.divider()

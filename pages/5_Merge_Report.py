@@ -3,6 +3,12 @@ Step 5: Merge Complete Report
 """
 import streamlit as st
 
+st.set_page_config(
+    page_title="Merge Report",
+    page_icon="📄",
+    layout="wide"
+)
+
 st.title("Step 5: Merge Complete Report")
 
 st.divider()

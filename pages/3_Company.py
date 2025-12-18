@@ -3,6 +3,12 @@ Step 3: Company Report
 """
 import streamlit as st
 
+st.set_page_config(
+    page_title="Company",
+    page_icon="🏢",
+    layout="wide"
+)
+
 st.title("Step 3: Company Report")
 
 st.divider()

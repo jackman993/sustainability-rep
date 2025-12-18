@@ -3,6 +3,12 @@ Step 6: GRI Index
 """
 import streamlit as st
 
+st.set_page_config(
+    page_title="GRI Index",
+    page_icon="📊",
+    layout="wide"
+)
+
 st.title("Step 6: GRI Index")
 
 st.divider()

@@ -3,6 +3,12 @@ Home
 """
 import streamlit as st
 
+st.set_page_config(
+    page_title="Home",
+    page_icon="🏠",
+    layout="wide"
+)
+
 st.title("🌍 ESG Report Generation System")
 
 st.divider()
