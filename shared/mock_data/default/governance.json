@@ -1,0 +1,87 @@
+{
+  "pages": [
+    {
+      "page_number": 1,
+      "title": "Governance Report Cover",
+      "content": "Governance & Social Responsibility Report",
+      "sections": ["Cover Page"]
+    },
+    {
+      "page_number": 2,
+      "title": "Governance Structure",
+      "content": "Organizational structure and decision-making processes",
+      "sections": [
+        "Board Composition",
+        "Management Structure",
+        "Decision-Making Framework"
+      ]
+    },
+    {
+      "page_number": 3,
+      "title": "Compliance Assessment",
+      "content": "Regulatory compliance status",
+      "sections": [
+        "Regulatory Compliance",
+        "Ethical Standards",
+        "Audit Results"
+      ]
+    },
+    {
+      "page_number": 4,
+      "title": "Risk Management",
+      "content": "Governance risk identification",
+      "sections": [
+        "Risk Framework",
+        "Key Governance Risks",
+        "Mitigation Strategies"
+      ]
+    },
+    {
+      "page_number": 5,
+      "title": "Improvement Path",
+      "content": "Governance optimization recommendations",
+      "sections": [
+        "Board Diversity",
+        "Transparency Enhancements",
+        "Stakeholder Engagement"
+      ]
+    }
+  ],
+  "content": {
+    "structure": {
+      "board_members": "Mock: 9 members",
+      "independent_directors": "Mock: 6 (67%)",
+      "committees": ["Audit", "Compensation", "Nominating"]
+    },
+    "compliance": {
+      "status": "Compliant",
+      "issues": [],
+      "certifications": ["ISO 37001", "SOC 2"]
+    },
+    "risks": [
+      {
+        "name": "Board Diversity",
+        "severity": "Medium",
+        "mitigation": "Enhance diversity initiatives"
+      },
+      {
+        "name": "Transparency",
+        "severity": "Low",
+        "mitigation": "Improve reporting practices"
+      }
+    ],
+    "recommendations": [
+      {
+        "priority": "High",
+        "action": "Enhance board diversity",
+        "timeline": "2025-2026"
+      },
+      {
+        "priority": "Medium",
+        "action": "Improve transparency",
+        "timeline": "2025"
+      }
+    ]
+  }
+}
+

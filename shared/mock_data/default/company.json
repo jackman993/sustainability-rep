@@ -1,0 +1,80 @@
+{
+  "pages": [
+    {
+      "page_number": 1,
+      "title": "Company Report Cover",
+      "content": "Company Sustainability Report",
+      "sections": ["Cover Page"]
+    },
+    {
+      "page_number": 2,
+      "title": "Company Overview",
+      "content": "Basic information and business scope",
+      "sections": [
+        "Company Profile",
+        "Business Activities",
+        "Market Position"
+      ]
+    },
+    {
+      "page_number": 3,
+      "title": "Financial Health",
+      "content": "Key financial indicators",
+      "sections": [
+        "Revenue Analysis",
+        "Profitability Metrics",
+        "Financial Stability"
+      ]
+    },
+    {
+      "page_number": 4,
+      "title": "Competitiveness Analysis",
+      "content": "Strengths and weaknesses",
+      "sections": [
+        "Core Competencies",
+        "Market Advantages",
+        "Areas for Improvement"
+      ]
+    },
+    {
+      "page_number": 5,
+      "title": "Development Recommendations",
+      "content": "Strategic direction suggestions",
+      "sections": [
+        "Growth Opportunities",
+        "Strategic Initiatives",
+        "Long-term Vision"
+      ]
+    }
+  ],
+  "content": {
+    "overview": {
+      "industry": "Technology",
+      "founded": "Mock data",
+      "employees": "10,000+",
+      "locations": "Global"
+    },
+    "financial": {
+      "revenue": "Mock: $1B+",
+      "profit": "Mock: $200M+",
+      "growth_rate": "15% YoY"
+    },
+    "competitiveness": {
+      "strengths": ["Innovation", "Market leadership", "Strong brand"],
+      "weaknesses": ["Dependency on key markets", "Regulatory challenges"]
+    },
+    "recommendations": [
+      {
+        "area": "Innovation",
+        "action": "Increase R&D investment",
+        "priority": "High"
+      },
+      {
+        "area": "Market Expansion",
+        "action": "Enter new geographic markets",
+        "priority": "Medium"
+      }
+    ]
+  }
+}
+

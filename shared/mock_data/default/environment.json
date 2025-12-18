@@ -1,0 +1,82 @@
+{
+  "pages": [
+    {
+      "page_number": 1,
+      "title": "Environment Report Cover",
+      "content": "Environment Sustainability Report",
+      "sections": ["Cover Page"]
+    },
+    {
+      "page_number": 2,
+      "title": "Executive Summary",
+      "content": "Key environmental indicators and achievements",
+      "sections": [
+        "Carbon Emission Overview",
+        "Environmental Performance Metrics",
+        "Key Achievements"
+      ]
+    },
+    {
+      "page_number": 3,
+      "title": "Environmental Risk Analysis",
+      "content": "Main environmental risks and impacts",
+      "sections": [
+        "Climate Change Risks",
+        "Resource Depletion Risks",
+        "Impact Assessment"
+      ]
+    },
+    {
+      "page_number": 4,
+      "title": "Improvement Recommendations",
+      "content": "Prioritized action plans",
+      "sections": [
+        "Emission Reduction Strategies",
+        "Resource Efficiency Improvements",
+        "Implementation Timeline"
+      ]
+    },
+    {
+      "page_number": 5,
+      "title": "Appendix",
+      "content": "Data sources and methodology",
+      "sections": [
+        "Data Collection Methods",
+        "Calculation Methodology",
+        "References"
+      ]
+    }
+  ],
+  "content": {
+    "summary": {
+      "total_emissions": "Mock data: 1,000 tCO2e",
+      "reduction_target": "30% by 2030",
+      "key_achievements": ["Renewable energy adoption", "Waste reduction"]
+    },
+    "risks": [
+      {
+        "name": "Climate Change",
+        "severity": "High",
+        "mitigation": "Emission reduction programs"
+      },
+      {
+        "name": "Resource Depletion",
+        "severity": "Medium",
+        "mitigation": "Circular economy initiatives"
+      }
+    ],
+    "recommendations": [
+      {
+        "priority": "High",
+        "action": "Reduce emissions by 30%",
+        "timeline": "2025-2030"
+      },
+      {
+        "priority": "Medium",
+        "action": "Improve resource efficiency",
+        "timeline": "2025-2027"
+      }
+    ]
+  }
+}
+
