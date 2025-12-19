@@ -369,6 +369,7 @@ def render_calculator(
             # Display formatted initial calculated value
             formatted_initial = f"{estimated_revenue_k:,.2f}"
             st.info(f"**Calculated Value**: {formatted_initial} K {currency_name}")
+            st.caption("💡 You can adjust this value below")
             
             # Editable input for estimated revenue
             modified_revenue_k = st.number_input(
