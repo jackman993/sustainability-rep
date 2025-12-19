@@ -2,6 +2,7 @@
 Step 1: Carbon Emission & TCFD
 """
 import streamlit as st
+from shared.engine.carbon import render_calculator
 
 st.set_page_config(
     page_title="Carbon & TCFD",
@@ -19,29 +20,24 @@ st.subheader("Sub-steps")
 tab1, tab2 = st.tabs(["1.1 Carbon Emission", "1.2 TCFD Tables"])
 
 with tab1:
-    st.write("**Carbon Emission Calculation**")
-    
-    # Industry
-    industry = st.selectbox(
-        "Industry",
-        ["Manufacturing", "Technology", "Services", "Retail", "Finance", "Other"]
+    # Embed carbon emission calculator component
+    # Compact mode: no title (page already has title), show region selection
+    render_calculator(
+        show_title=False,      # Don't show calculator title (page already has title)
+        show_region=True,       # Show region selection
+        compact_mode=True,      # Compact mode for better fit in tab
+        default_region="TW"     # Default region
     )
     
-    # Monthly Electricity
-    monthly_electricity = st.number_input(
-        "Monthly Electricity Cost (USD)",
-        min_value=0,
-        value=10000,
-        step=1000
-    )
-    
-    if st.button("Calculate Emissions", type="primary"):
-        st.success("✅ Carbon emission calculated")
+    # Show calculation summary if available
+    if st.session_state.get("carbon_calc_done") and st.session_state.get("carbon_emission"):
+        st.divider()
+        st.success("✅ Carbon emission calculation completed! Results are saved and can be used in subsequent steps.")
 
 with tab2:
     st.write("**TCFD Climate Risk Tables**")
     
-    if st.button("Generate TCFD Tables", type="primary"):
+    if st.button("Generate TCFD Tables", type="primary", use_container_width=True):
         st.success("✅ TCFD tables generated")
 
 st.divider()
