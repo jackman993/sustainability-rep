@@ -1,10 +1,8 @@
-# Page title - single source of truth for sidebar, page_title, and st.title
-PAGE_TITLE = "Step 4: Governance & Social Report"
-
-# Docstring for sidebar navigation (must be literal string, not formatted)
 """
 Step 4: Governance & Social Report
 """
+# Page title - single source of truth (must match docstring above)
+PAGE_TITLE = "Step 4: Governance & Social Report"
 
 import streamlit as st
 from shared.ui.sidebar_config import render_sidebar_config

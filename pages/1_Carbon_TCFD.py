@@ -1,10 +1,8 @@
-# Page title - single source of truth for sidebar, page_title, and st.title
-PAGE_TITLE = "Step 1: Emission & TCFD"
-
-# Docstring for sidebar navigation (must be literal string, not formatted)
 """
 Step 1: Emission & TCFD
 """
+# Page title - single source of truth (must match docstring above)
+PAGE_TITLE = "Step 1: Emission & TCFD"
 
 import streamlit as st
 from shared.engine.carbon import render_calculator
