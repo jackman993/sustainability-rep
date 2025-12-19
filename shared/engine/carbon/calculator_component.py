@@ -328,6 +328,67 @@ def render_calculator(
             "full_result": result
         }
         
+        # Estimated Annual Revenue Section
+        st.divider()
+        
+        # Get monthly bill from session state
+        monthly_bill = None
+        if "quick_monthly_bill" in st.session_state and st.session_state.quick_monthly_bill:
+            # Quick mode: use monthly bill directly
+            monthly_bill = st.session_state.quick_monthly_bill
+        elif "detail_annual_kwh" in st.session_state and st.session_state.detail_annual_kwh:
+            # Detailed mode: calculate monthly bill from annual kWh
+            # Use region's default electricity price or user-entered price if available
+            annual_kwh = st.session_state.detail_annual_kwh
+            region_config = REGION_ELECTRICITY_PRICES.get(calc_region, REGION_ELECTRICITY_PRICES["TW"])
+            price_per_kwh = st.session_state.get("quick_price_kwh", region_config["price"])
+            monthly_bill = (annual_kwh * price_per_kwh) / 12
+        
+        if monthly_bill:
+            # Get currency information for the region
+            region_config = REGION_ELECTRICITY_PRICES.get(calc_region, REGION_ELECTRICITY_PRICES["TW"])
+            currency_name = region_config["currency"]
+            currency_symbol = region_config["symbol"]
+            
+            # Calculate estimated annual revenue: monthly_bill × 12 × 111
+            estimated_revenue_raw = monthly_bill * 12 * 111
+            estimated_revenue_k = estimated_revenue_raw / 1000
+            
+            # Get or initialize the revenue value (user may have modified it)
+            if "estimated_annual_revenue_k" not in st.session_state:
+                st.session_state.estimated_annual_revenue_k = estimated_revenue_k
+            else:
+                # If region changed, reset to calculated value
+                if st.session_state.get("estimated_annual_revenue_region") != calc_region:
+                    st.session_state.estimated_annual_revenue_k = estimated_revenue_k
+            
+            # Display revenue estimation section
+            st.subheader("💰 Estimated Annual Revenue")
+            st.caption(f"Calculation: Monthly Bill × 12 × 111")
+            
+            # Editable input for estimated revenue
+            modified_revenue_k = st.number_input(
+                f"Estimated Annual Revenue (K {currency_name})",
+                min_value=0.0,
+                value=float(st.session_state.estimated_annual_revenue_k),
+                step=100.0,
+                help="💡 You can modify this estimated value",
+                key="estimated_annual_revenue_input"
+            )
+            
+            # Store to session state
+            st.session_state["estimated_annual_revenue"] = {
+                "k_value": modified_revenue_k,
+                "raw_value": modified_revenue_k * 1000,
+                "currency": currency_name,
+                "currency_symbol": currency_symbol,
+                "region": calc_region,
+                "monthly_bill": monthly_bill,
+                "is_modified": abs(modified_revenue_k - estimated_revenue_k) > 0.01  # Allow small floating point differences
+            }
+            st.session_state.estimated_annual_revenue_k = modified_revenue_k
+            st.session_state.estimated_annual_revenue_region = calc_region
+        
         # Download Button
         if not compact_mode:
             st.divider()
