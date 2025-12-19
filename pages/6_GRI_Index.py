@@ -25,7 +25,7 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.write("**Report Contents:**")
-    st.write("- Carbon Emission Analysis")
+    st.write("- Emission Analysis")
     st.write("- TCFD Climate Risk Assessment")
     st.write("- Environment Report (17 pages)")
     st.write("- Company Report")

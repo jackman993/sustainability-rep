@@ -36,27 +36,22 @@ with st.sidebar:
     # Claude API Key Input
     st.subheader("Claude API Settings")
     
-    # Check if API key is already stored
-    if "claude_api_key" not in st.session_state:
-        st.session_state.claude_api_key = ""
-    
     # API Key input (password type for security)
-    api_key = st.text_input(
+    # Using key="claude_api_key" automatically syncs with session_state
+    api_key_input = st.text_input(
         "Claude API Key",
-        value=st.session_state.claude_api_key,
+        value="",
         type="password",
         help="Enter your Anthropic Claude API key. Get one at https://console.anthropic.com/",
-        key="claude_api_key_input"
+        key="claude_api_key"
     )
     
-    # Store API key in session state
-    if api_key:
-        st.session_state.claude_api_key = api_key
-        st.success("✅ API Key saved")
-    elif st.session_state.claude_api_key:
-        # Show masked key if exists
+    # Show status based on session state (which is automatically updated by text_input with key)
+    if st.session_state.get("claude_api_key"):
         masked_key = st.session_state.claude_api_key[:8] + "..." + st.session_state.claude_api_key[-4:] if len(st.session_state.claude_api_key) > 12 else "***"
-        st.info(f"Current key: {masked_key}")
+        st.success(f"✅ API Key saved: {masked_key}")
+    else:
+        st.info("ℹ️ Enter your Claude API key above")
     
     # Claude API Version Selection
     claude_api_version = st.selectbox(
@@ -99,7 +94,7 @@ st.subheader("System Workflow")
 col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 with col1:
-    st.info("**Step 1**\nCarbon & TCFD")
+    st.info("**Step 1**\nEmission & TCFD")
     
 with col2:
     st.info("**Step 2**\nEnvironment")
@@ -122,4 +117,4 @@ st.info("💡 **Tip**: Use the sidebar navigation menu to access different pages
 
 # Start Button
 if st.button("Get Started", type="primary", use_container_width=True):
-    st.info("✅ Please use the sidebar navigation menu (☰) to navigate to '1_Carbon_TCFD' page")
+    st.info("✅ Please use the sidebar navigation menu (☰) to navigate to '1_Emission_TCFD' page")

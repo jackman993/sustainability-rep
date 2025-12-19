@@ -14,7 +14,7 @@ st.title("Step 2: Environment Report")
 st.divider()
 
 # Prerequisites
-st.success("✅ Carbon Emission & TCFD completed")
+st.success("✅ Emission & TCFD completed")
 
 st.divider()
 
@@ -23,7 +23,7 @@ st.subheader("Generate Environment Report")
 
 st.info("""
 **Environment section includes:**
-- Detailed carbon emission analysis
+- Detailed emission analysis
 - TCFD climate risk assessment
 - Environmental management measures
 - Approximately 17 pages

@@ -14,7 +14,7 @@ st.title("Step 4: Governance & Social Report")
 st.divider()
 
 # Prerequisites
-st.success("✅ Carbon, TCFD, Environment, and Company sections completed")
+st.success("✅ Emission, TCFD, Environment, and Company sections completed")
 
 st.divider()
 

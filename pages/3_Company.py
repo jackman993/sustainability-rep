@@ -14,7 +14,7 @@ st.title("Step 3: Company Report")
 st.divider()
 
 # Prerequisites
-st.success("✅ Carbon, TCFD, and Environment sections completed")
+st.success("✅ Emission, TCFD, and Environment sections completed")
 
 st.divider()
 

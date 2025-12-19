@@ -19,7 +19,7 @@ st.subheader("System Workflow")
 col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 with col1:
-    st.info("**Step 1**\nCarbon & TCFD")
+    st.info("**Step 1**\nEmission & TCFD")
     
 with col2:
     st.info("**Step 2**\nEnvironment")

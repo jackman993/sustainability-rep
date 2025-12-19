@@ -1,26 +1,26 @@
 """
-Step 1: Carbon Emission & TCFD
+Step 1: Emission & TCFD
 """
 import streamlit as st
 from shared.engine.carbon import render_calculator
 
 st.set_page_config(
-    page_title="Carbon & TCFD",
+    page_title="Emission & TCFD",
     page_icon="🌱",
     layout="wide"
 )
 
-st.title("Step 1: Carbon Emission & TCFD")
+st.title("Step 1: Emission & TCFD")
 
 st.divider()
 
 # Sub-steps
 st.subheader("Sub-steps")
 
-tab1, tab2 = st.tabs(["1.1 Carbon Emission", "1.2 TCFD Tables"])
+tab1, tab2 = st.tabs(["1.1 Emission", "1.2 TCFD Tables"])
 
 with tab1:
-    # Embed carbon emission calculator component
+    # Embed emission calculator component
     # Compact mode: no title (page already has title), show region selection
     render_calculator(
         show_title=False,      # Don't show calculator title (page already has title)
@@ -32,7 +32,7 @@ with tab1:
     # Show calculation summary if available
     if st.session_state.get("carbon_calc_done") and st.session_state.get("carbon_emission"):
         st.divider()
-        st.success("✅ Carbon emission calculation completed! Results are saved and can be used in subsequent steps.")
+        st.success("✅ Emission calculation completed! Results are saved and can be used in subsequent steps.")
 
 with tab2:
     st.write("**TCFD Climate Risk Tables**")
