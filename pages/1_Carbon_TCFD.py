@@ -6,7 +6,7 @@ from shared.engine.carbon import render_calculator
 from shared.ui.sidebar_config import render_sidebar_config
 
 st.set_page_config(
-    page_title="Emission & TCFD",
+    page_title="Step 1: Emission & TCFD",
     page_icon="🌱",
     layout="wide"
 )

@@ -5,7 +5,7 @@ import streamlit as st
 from shared.ui.sidebar_config import render_sidebar_config
 
 st.set_page_config(
-    page_title="Environment",
+    page_title="Step 2: Environment Report",
     page_icon="🌍",
     layout="wide"
 )

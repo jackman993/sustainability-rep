@@ -5,7 +5,7 @@ import streamlit as st
 from shared.ui.sidebar_config import render_sidebar_config
 
 st.set_page_config(
-    page_title="Company",
+    page_title="Step 3: Company Report",
     page_icon="🏢",
     layout="wide"
 )

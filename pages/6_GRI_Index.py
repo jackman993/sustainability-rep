@@ -5,7 +5,7 @@ import streamlit as st
 from shared.ui.sidebar_config import render_sidebar_config
 
 st.set_page_config(
-    page_title="GRI Index",
+    page_title="Step 6: GRI Index",
     page_icon="📊",
     layout="wide"
 )
