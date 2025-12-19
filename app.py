@@ -18,6 +18,75 @@ if "current_step" not in st.session_state:
 if "execution_mode" not in st.session_state:
     st.session_state.execution_mode = "mock"
 
+# Sidebar: API Configuration
+with st.sidebar:
+    st.header("🔑 API Configuration")
+    
+    # Execution Mode Selection
+    execution_mode = st.selectbox(
+        "Execution Mode",
+        options=["mock", "llm-test", "production"],
+        index=0,
+        help="Mock: Use mock data (no API key needed)\nLLM-Test: Test single module with LLM\nProduction: Full LLM execution"
+    )
+    st.session_state.execution_mode = execution_mode
+    
+    st.divider()
+    
+    # Claude API Key Input
+    st.subheader("Claude API Settings")
+    
+    # Check if API key is already stored
+    if "claude_api_key" not in st.session_state:
+        st.session_state.claude_api_key = ""
+    
+    # API Key input (password type for security)
+    api_key = st.text_input(
+        "Claude API Key",
+        value=st.session_state.claude_api_key,
+        type="password",
+        help="Enter your Anthropic Claude API key. Get one at https://console.anthropic.com/",
+        key="claude_api_key_input"
+    )
+    
+    # Store API key in session state
+    if api_key:
+        st.session_state.claude_api_key = api_key
+        st.success("✅ API Key saved")
+    elif st.session_state.claude_api_key:
+        # Show masked key if exists
+        masked_key = st.session_state.claude_api_key[:8] + "..." + st.session_state.claude_api_key[-4:] if len(st.session_state.claude_api_key) > 12 else "***"
+        st.info(f"Current key: {masked_key}")
+    
+    # Claude API Version Selection
+    claude_api_version = st.selectbox(
+        "Claude API Version",
+        options=["2023-06-01", "2024-01-01", "2024-10-22"],
+        index=2,
+        help="Select the Claude API version to use. Latest recommended: 2024-10-22"
+    )
+    st.session_state.claude_api_version = claude_api_version
+    
+    # Claude Model Selection
+    claude_model = st.selectbox(
+        "Claude Model",
+        options=["claude-3-5-sonnet-20241022", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"],
+        index=0,
+        help="Select the Claude model to use"
+    )
+    st.session_state.claude_model = claude_model
+    
+    st.divider()
+    
+    # Info about API usage
+    if execution_mode == "mock":
+        st.info("ℹ️ Mock mode: No API key required")
+    elif execution_mode in ["llm-test", "production"]:
+        if not st.session_state.claude_api_key:
+            st.warning("⚠️ API key required for LLM modes")
+        else:
+            st.success("✅ Ready for LLM generation")
+
 # Show home page content directly
 # Streamlit will automatically show pages/ directory files in sidebar navigation
 st.title("🌍 ESG Report Generation System")

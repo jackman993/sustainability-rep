@@ -34,19 +34,93 @@ class EnvironmentGenerator(ModuleInterface):
             return self._generate_with_mock(input_data, mode_manager)
     
     def _generate_with_llm(self, input_data: Dict[str, Any], mode_manager: ModeManager) -> Dict[str, Any]:
-        """Generate report using LLM"""
-        # TODO: Implement LLM call
-        api_key = mode_manager.get_api_key()
-        if not api_key:
-            raise ValueError("API key required for LLM mode")
+        """Generate report using Claude LLM"""
+        from shared.llm import ClaudeClient
         
-        # Placeholder for LLM implementation
-        return {
-            "module": "environment",
-            "pages": [],
-            "content": "LLM generation not yet implemented",
-            "mode": "llm"
-        }
+        # Initialize Claude client
+        try:
+            claude_client = ClaudeClient(mode_manager)
+        except ValueError as e:
+            raise ValueError(f"Failed to initialize Claude client: {str(e)}")
+        
+        # Prepare prompt with input data
+        company_name = input_data.get("company_name", "Company")
+        year = input_data.get("year", "2025")
+        carbon_data = input_data.get("carbon_emission", {})
+        revenue_data = input_data.get("estimated_annual_revenue", {})
+        
+        # Build system prompt
+        system_prompt = """You are an expert ESG report writer specializing in environmental sustainability reports.
+Generate comprehensive, professional environmental reports based on the provided data.
+The report should be structured, factual, and aligned with international ESG standards."""
+        
+        # Build user prompt
+        prompt = f"""Generate an environmental sustainability report for {company_name} for the year {year}.
+
+Company Information:
+- Company Name: {company_name}
+- Year: {year}"""
+
+        if revenue_data:
+            revenue_k = revenue_data.get("k_value", 0)
+            currency = revenue_data.get("currency", "NTD")
+            prompt += f"\n- Estimated Annual Revenue: {revenue_k:,.2f} K {currency}"
+
+        if carbon_data:
+            total_emissions = carbon_data.get("total_tco2e", 0)
+            scope1 = carbon_data.get("scope1", 0)
+            scope2 = carbon_data.get("scope2", 0)
+            prompt += f"""
+Carbon Emissions Data:
+- Total Emissions (Scope 1+2): {total_emissions} tCO2e
+- Scope 1 Emissions: {scope1} tCO2e
+- Scope 2 Emissions: {scope2} tCO2e"""
+
+        prompt += """
+
+Please generate a comprehensive environmental report including:
+1. Executive Summary
+2. Environmental Risk Analysis
+3. Carbon Emission Analysis
+4. Environmental Management Measures
+5. Improvement Recommendations
+
+Format the response as JSON with the following structure:
+{
+  "pages": [
+    {{"page_number": 1, "title": "...", "content": "..."}},
+    ...
+  ],
+  "content": {{
+    "summary": "...",
+    "risks": ["...", "..."],
+    "recommendations": ["...", "..."]
+  }}
+}"""
+
+        # Generate report using Claude
+        try:
+            result = claude_client.generate_structured(
+                prompt=prompt,
+                system_prompt=system_prompt,
+                max_tokens=4096,
+                temperature=0.7
+            )
+            
+            return {
+                "module": "environment",
+                "mode": "llm",
+                "pages": result.get("pages", []),
+                "content": result.get("content", {}),
+                "metadata": {
+                    "generated_at": "2025-12-19",
+                    "model": claude_client.model,
+                    "api_version": claude_client.api_version,
+                    "input_data_keys": list(input_data.keys())
+                }
+            }
+        except Exception as e:
+            raise ValueError(f"Failed to generate report with Claude: {str(e)}")
     
     def _generate_with_mock(self, input_data: Dict[str, Any], mode_manager: ModeManager) -> Dict[str, Any]:
         """Generate report using mock data"""

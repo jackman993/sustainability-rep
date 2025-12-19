@@ -99,13 +99,49 @@ class ModeManager:
         return default_path
     
     def get_api_key(self) -> Optional[str]:
-        """Get API key from environment variable or config"""
-        # Priority: environment variable > config file
-        api_key = os.getenv('OPENAI_API_KEY') or os.getenv('ANTHROPIC_API_KEY')
+        """
+        Get API key from multiple sources
+        
+        Priority: Streamlit session_state > environment variable > config file
+        """
+        # Priority 1: Streamlit session_state (for UI-based input)
+        try:
+            import streamlit as st
+            if hasattr(st, 'session_state') and 'claude_api_key' in st.session_state:
+                api_key = st.session_state.claude_api_key
+                if api_key:
+                    return api_key
+        except (ImportError, RuntimeError):
+            # Streamlit not available (e.g., CLI mode)
+            pass
+        
+        # Priority 2: Environment variable
+        api_key = os.getenv('ANTHROPIC_API_KEY') or os.getenv('OPENAI_API_KEY')
         if api_key:
             return api_key
         
+        # Priority 3: Config file
         return self.config.get('api_key')
+    
+    def get_claude_api_version(self) -> str:
+        """Get Claude API version from session_state or default"""
+        try:
+            import streamlit as st
+            if hasattr(st, 'session_state') and 'claude_api_version' in st.session_state:
+                return st.session_state.claude_api_version
+        except (ImportError, RuntimeError):
+            pass
+        return "2024-10-22"  # Default to latest
+    
+    def get_claude_model(self) -> str:
+        """Get Claude model from session_state or default"""
+        try:
+            import streamlit as st
+            if hasattr(st, 'session_state') and 'claude_model' in st.session_state:
+                return st.session_state.claude_model
+        except (ImportError, RuntimeError):
+            pass
+        return "claude-3-5-sonnet-20241022"  # Default model
     
     def log_mode_info(self):
         """Log current mode information"""
