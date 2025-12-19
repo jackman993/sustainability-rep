@@ -1,11 +1,16 @@
+# Page title - single source of truth for sidebar, page_title, and st.title
+PAGE_TITLE = "Step 2: Environment Report"
+
+# Docstring for sidebar navigation (must be literal string, not formatted)
 """
 Step 2: Environment Report
 """
+
 import streamlit as st
 from shared.ui.sidebar_config import render_sidebar_config
 
 st.set_page_config(
-    page_title="Step 2: Environment Report",
+    page_title=PAGE_TITLE,
     page_icon="🌍",
     layout="wide"
 )
@@ -13,7 +18,7 @@ st.set_page_config(
 # Sidebar: API Configuration (shared component)
 render_sidebar_config()
 
-st.title("Step 2: Environment Report")
+st.title(PAGE_TITLE)
 
 st.divider()
 
