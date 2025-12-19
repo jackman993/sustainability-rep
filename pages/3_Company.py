@@ -60,4 +60,4 @@ if st.session_state.get("company_done"):
     
     with col2:
         if st.button("Next", type="primary", use_container_width=True):
-            st.switch_page("pages/4_Governance_Social.py")
+            st.switch_page("pages/4_Governance.py")

@@ -83,7 +83,7 @@ col1, col2 = st.columns(2)
 
 with col1:
     if st.button("Previous", use_container_width=True):
-        st.switch_page("pages/4_Governance_Social.py")
+        st.switch_page("pages/4_Governance.py")
 
 with col2:
     if st.button("Next", type="primary", use_container_width=True):

@@ -82,7 +82,7 @@ with col1:
         # Clear session state
         for key in list(st.session_state.keys()):
             del st.session_state[key]
-        st.switch_page("pages/1_Emission_TCFD.py")
+        st.switch_page("pages/1_Carbon_TCFD.py")
 
 with col2:
     if st.button("Return Home", use_container_width=True):
