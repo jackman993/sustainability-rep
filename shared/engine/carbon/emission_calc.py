@@ -21,6 +21,40 @@ GRID_EMISSION_FACTORS = {
     "JP": 0.441,   # Japan (2024)
 }
 
+# === Regional Electricity Prices (for estimation) ===
+REGION_ELECTRICITY_PRICES = {
+    "TW": {
+        "price": 4.4,           # NTD/kWh
+        "currency": "NTD",
+        "symbol": "NT$",
+        "note": "台灣商業用電平均電價（考慮階梯電價）"
+    },
+    "US": {
+        "price": 0.12,          # USD/kWh
+        "currency": "USD",
+        "symbol": "$",
+        "note": "美國商業用電平均電價"
+    },
+    "EU": {
+        "price": 0.25,          # EUR/kWh
+        "currency": "EUR",
+        "symbol": "€",
+        "note": "歐盟商業用電平均電價"
+    },
+    "CN": {
+        "price": 0.8,           # CNY/kWh
+        "currency": "CNY",
+        "symbol": "¥",
+        "note": "中國商業用電平均電價"
+    },
+    "JP": {
+        "price": 25,            # JPY/kWh
+        "currency": "JPY",
+        "symbol": "¥",
+        "note": "日本商業用電平均電價"
+    }
+}
+
 # Fuel emission factors (universal)
 EF_GASOLINE = 2.3  # kg CO2/L
 EF_DIESEL = 2.6    # kg CO2/L

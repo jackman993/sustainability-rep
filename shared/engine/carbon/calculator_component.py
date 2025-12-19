@@ -4,7 +4,7 @@ Reusable calculator component for integration into Streamlit pages
 """
 import streamlit as st
 from datetime import datetime
-from .emission_calc import Inputs, estimate, GRID_EMISSION_FACTORS
+from .emission_calc import Inputs, estimate, GRID_EMISSION_FACTORS, REGION_ELECTRICITY_PRICES
 
 
 def render_calculator(
@@ -73,22 +73,32 @@ def render_calculator(
     with tab1:
         st.write("**Quick Estimation (Monthly Bill)**")
         
+        # Get region-specific currency and price
+        region_config = REGION_ELECTRICITY_PRICES.get(region, REGION_ELECTRICITY_PRICES["TW"])
+        currency_symbol = region_config["symbol"]
+        default_price = region_config["price"]
+        
+        # Monthly bill input with region-specific currency
         monthly_bill = st.number_input(
-            "Monthly Electricity Bill (USD/NTD/EUR)",
+            f"Monthly Electricity Bill ({currency_symbol})",
             min_value=0,
             value=5000,
             step=500,
             key="quick_monthly_bill"
         )
         
+        # Price per kWh with region-specific currency and default value
         price_per_kwh = st.number_input(
-            "Electricity Price per kWh",
+            f"Electricity Price per kWh ({currency_symbol}/kWh)",
             min_value=0.0,
-            value=0.12,
-            step=0.01,
-            help="Typical: US $0.12, TW NT$4.4, EU €0.25",
+            value=default_price,
+            step=0.01 if default_price < 1 else (1 if default_price < 10 else 5),
+            help=f"預設值為 {region_config['note']}，可根據實際情況修改",
             key="quick_price_kwh"
         )
+        
+        # Info box explaining this is an estimate
+        st.info(f"💡 **提示**：電價預設值為 **{currency_symbol}{default_price}/kWh**（{region_config['note']}）。這是估算值，實際電價可能因行業、用電量而異，建議根據實際情況調整。")
         
         col1, col2 = st.columns(2)
         
