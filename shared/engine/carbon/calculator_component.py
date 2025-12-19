@@ -54,7 +54,8 @@ def render_calculator(
             options=list(region_names.keys()),
             format_func=lambda x: region_names[x],
             index=list(region_names.keys()).index(default_region) if default_region in region_names else 0,
-            help="Different regions have different grid emission factors"
+            help="Different regions have different grid emission factors",
+            key="carbon_calc_region_selector"
         )
         
         grid_ef = GRID_EMISSION_FACTORS[region]
@@ -64,6 +65,17 @@ def render_calculator(
             st.divider()
     else:
         region = default_region
+    
+    # Store current region in session state to detect changes
+    if "carbon_calc_last_region" not in st.session_state:
+        st.session_state.carbon_calc_last_region = region
+    
+    # Reset price when region changes
+    if st.session_state.carbon_calc_last_region != region:
+        st.session_state.carbon_calc_last_region = region
+        # Clear the price input when region changes
+        if "quick_price_kwh" in st.session_state:
+            del st.session_state.quick_price_kwh
     
     # Input Section
     st.subheader("📊 Input Data")
@@ -79,23 +91,38 @@ def render_calculator(
         default_price = region_config["price"]
         
         # Monthly bill input with region-specific currency
-        monthly_bill = st.number_input(
-            f"Monthly Electricity Bill ({currency_symbol})",
-            min_value=0,
-            value=5000,
-            step=500,
-            key="quick_monthly_bill"
-        )
+        col_bill1, col_bill2 = st.columns([4, 1])
+        with col_bill1:
+            monthly_bill = st.number_input(
+                f"Monthly Electricity Bill ({currency_symbol})",
+                min_value=0,
+                value=5000,
+                step=500,
+                key="quick_monthly_bill"
+            )
+        with col_bill2:
+            if st.button("清除", key="clear_monthly_bill", use_container_width=True):
+                st.session_state.quick_monthly_bill = 0
+                st.rerun()
         
         # Price per kWh with region-specific currency and default value
-        price_per_kwh = st.number_input(
-            f"Electricity Price per kWh ({currency_symbol}/kWh)",
-            min_value=0.0,
-            value=default_price,
-            step=0.01 if default_price < 1 else (1 if default_price < 10 else 5),
-            help=f"預設值為 {region_config['note']}，可根據實際情況修改",
-            key="quick_price_kwh"
-        )
+        # Get current price value or use default
+        current_price = st.session_state.get("quick_price_kwh", default_price)
+        
+        col_price1, col_price2 = st.columns([4, 1])
+        with col_price1:
+            price_per_kwh = st.number_input(
+                f"Electricity Price per kWh ({currency_symbol}/kWh)",
+                min_value=0.0,
+                value=current_price if current_price > 0 else default_price,
+                step=0.01 if default_price < 1 else (1 if default_price < 10 else 5),
+                help=f"預設值為 {region_config['note']}，可根據實際情況修改",
+                key="quick_price_kwh"
+            )
+        with col_price2:
+            if st.button("清除", key="clear_price_kwh", use_container_width=True):
+                st.session_state.quick_price_kwh = default_price
+                st.rerun()
         
         # Info box explaining this is an estimate
         st.info(f"💡 **提示**：電價預設值為 **{currency_symbol}{default_price}/kWh**（{region_config['note']}）。這是估算值，實際電價可能因行業、用電量而異，建議根據實際情況調整。")
