@@ -366,6 +366,10 @@ def render_calculator(
             st.subheader("💰 Estimated Annual Revenue")
             st.caption(f"Calculation: Monthly Bill × 12 × 111")
             
+            # Display formatted initial calculated value
+            formatted_initial = f"{estimated_revenue_k:,.2f}"
+            st.info(f"**Calculated Value**: {formatted_initial} K {currency_name}")
+            
             # Editable input for estimated revenue
             modified_revenue_k = st.number_input(
                 f"Estimated Annual Revenue (K {currency_name})",
@@ -376,17 +380,27 @@ def render_calculator(
                 key="estimated_annual_revenue_input"
             )
             
+            # Display formatted current value
+            formatted_current = f"{modified_revenue_k:,.2f}"
+            if abs(modified_revenue_k - estimated_revenue_k) > 0.01:
+                st.success(f"**Current Value**: {formatted_current} K {currency_name} (Modified)")
+            else:
+                st.caption(f"**Current Value**: {formatted_current} K {currency_name}")
+            
             # Store to session state
+            # Note: All numeric values are stored as float (pure numbers without comma separators)
+            # This ensures compatibility with LLM prompts and programmatic processing
+            # Formatting with comma separators should only be done for display purposes
             st.session_state["estimated_annual_revenue"] = {
-                "k_value": modified_revenue_k,
-                "raw_value": modified_revenue_k * 1000,
+                "k_value": float(modified_revenue_k),  # Pure number: 1234.56 (not "1,234.56")
+                "raw_value": float(modified_revenue_k * 1000),  # Pure number for LLM/prompt use
                 "currency": currency_name,
                 "currency_symbol": currency_symbol,
                 "region": calc_region,
-                "monthly_bill": monthly_bill,
+                "monthly_bill": float(monthly_bill),  # Pure number
                 "is_modified": abs(modified_revenue_k - estimated_revenue_k) > 0.01  # Allow small floating point differences
             }
-            st.session_state.estimated_annual_revenue_k = modified_revenue_k
+            st.session_state.estimated_annual_revenue_k = float(modified_revenue_k)
             st.session_state.estimated_annual_revenue_region = calc_region
         
         # Download Button
