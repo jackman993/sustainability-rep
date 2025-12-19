@@ -27,31 +27,31 @@ REGION_ELECTRICITY_PRICES = {
         "price": 4.4,           # NTD/kWh
         "currency": "NTD",
         "symbol": "NT$",
-        "note": "台灣商業用電平均電價（考慮階梯電價）"
+        "note": "Taiwan average commercial electricity rate (considering tiered pricing)"
     },
     "US": {
         "price": 0.12,          # USD/kWh
         "currency": "USD",
         "symbol": "$",
-        "note": "美國商業用電平均電價"
+        "note": "US average commercial electricity rate"
     },
     "EU": {
         "price": 0.25,          # EUR/kWh
         "currency": "EUR",
         "symbol": "€",
-        "note": "歐盟商業用電平均電價"
+        "note": "EU average commercial electricity rate"
     },
     "CN": {
         "price": 0.8,           # CNY/kWh
         "currency": "CNY",
         "symbol": "¥",
-        "note": "中國商業用電平均電價"
+        "note": "China average commercial electricity rate"
     },
     "JP": {
         "price": 25,            # JPY/kWh
         "currency": "JPY",
         "symbol": "¥",
-        "note": "日本商業用電平均電價"
+        "note": "Japan average commercial electricity rate"
     }
 }
 

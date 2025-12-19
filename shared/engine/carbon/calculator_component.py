@@ -70,12 +70,12 @@ def render_calculator(
     if "carbon_calc_last_region" not in st.session_state:
         st.session_state.carbon_calc_last_region = region
     
-    # Reset price when region changes
+    # Reset price when region changes to match new region's default
     if st.session_state.carbon_calc_last_region != region:
         st.session_state.carbon_calc_last_region = region
-        # Clear the price input when region changes
-        if "quick_price_kwh" in st.session_state:
-            del st.session_state.quick_price_kwh
+        # Reset price to new region's default when region changes
+        new_region_config = REGION_ELECTRICITY_PRICES.get(region, REGION_ELECTRICITY_PRICES["TW"])
+        st.session_state.quick_price_kwh = float(new_region_config["price"])
     
     # Input Section
     st.subheader("📊 Input Data")
@@ -117,6 +117,7 @@ def render_calculator(
         
         # Price per kWh with region-specific currency and default value
         # Get current price value or use default (ensure float type)
+        # If region changed, use new region's default price
         if "quick_price_kwh" in st.session_state:
             current_price = float(st.session_state.quick_price_kwh)
         else:
@@ -127,15 +128,15 @@ def render_calculator(
             min_value=0.0,
             value=current_price,
             step=0.01 if default_price < 1 else (1.0 if default_price < 10 else 5.0),
-            help=f"預設值為 {region_config['note']}，可根據實際情況修改",
+            help=f"Default: {region_config['note']}. Adjust based on your actual electricity rate.",
             key="quick_price_kwh"
         )
         
         # Info box explaining this is an estimate
-        st.info(f"💡 **提示**：電價預設值為 **{currency_symbol}{default_price}/kWh**（{region_config['note']}）。這是估算值，實際電價可能因行業、用電量而異，建議根據實際情況調整。")
+        st.info(f"💡 **Note**: Default electricity price is **{currency_symbol}{default_price}/kWh** ({region_config['note']}). This is an estimate and may vary by industry and consumption level. Please adjust based on your actual rate.")
         
         # Clear all button
-        if st.button("🔄 清除所有輸入", key="clear_all_inputs", use_container_width=True):
+        if st.button("🔄 Clear All Inputs", key="clear_all_inputs", use_container_width=True):
             st.session_state.clear_carbon_inputs = True
             st.rerun()
         
