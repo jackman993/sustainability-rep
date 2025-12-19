@@ -106,22 +106,25 @@ def render_calculator(
                 st.rerun()
         
         # Price per kWh with region-specific currency and default value
-        # Get current price value or use default
-        current_price = st.session_state.get("quick_price_kwh", default_price)
+        # Get current price value or use default (ensure float type)
+        if "quick_price_kwh" in st.session_state:
+            current_price = float(st.session_state.quick_price_kwh)
+        else:
+            current_price = float(default_price)
         
         col_price1, col_price2 = st.columns([4, 1])
         with col_price1:
             price_per_kwh = st.number_input(
                 f"Electricity Price per kWh ({currency_symbol}/kWh)",
                 min_value=0.0,
-                value=current_price if current_price > 0 else default_price,
-                step=0.01 if default_price < 1 else (1 if default_price < 10 else 5),
+                value=current_price,
+                step=0.01 if default_price < 1 else (1.0 if default_price < 10 else 5.0),
                 help=f"預設值為 {region_config['note']}，可根據實際情況修改",
                 key="quick_price_kwh"
             )
         with col_price2:
             if st.button("清除", key="clear_price_kwh", use_container_width=True):
-                st.session_state.quick_price_kwh = default_price
+                st.session_state.quick_price_kwh = float(default_price)
                 st.rerun()
         
         # Info box explaining this is an estimate
