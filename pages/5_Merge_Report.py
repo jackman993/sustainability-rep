@@ -2,12 +2,16 @@
 Step 5: Merge Complete Report
 """
 import streamlit as st
+from shared.ui.sidebar_config import render_sidebar_config
 
 st.set_page_config(
     page_title="Merge Report",
     page_icon="📄",
     layout="wide"
 )
+
+# Sidebar: API Configuration (shared component)
+render_sidebar_config()
 
 st.title("Step 5: Merge Complete Report")
 
@@ -79,7 +83,7 @@ col1, col2 = st.columns(2)
 
 with col1:
     if st.button("Previous", use_container_width=True):
-        st.switch_page("pages/4_Governance.py")
+        st.switch_page("pages/4_Governance_Social.py")
 
 with col2:
     if st.button("Next", type="primary", use_container_width=True):

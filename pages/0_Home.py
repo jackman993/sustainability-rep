@@ -2,12 +2,16 @@
 Home
 """
 import streamlit as st
+from shared.ui.sidebar_config import render_sidebar_config
 
 st.set_page_config(
     page_title="Home",
     page_icon="🏠",
     layout="wide"
 )
+
+# Sidebar: API Configuration (shared component)
+render_sidebar_config()
 
 st.title("🌍 ESG Report Generation System")
 
@@ -28,7 +32,7 @@ with col3:
     st.info("**Step 3**\nCompany")
     
 with col4:
-    st.info("**Step 4**\nGovernance")
+    st.info("**Step 4**\nGovernance & Social")
 
 with col5:
     st.info("**Step 5**\nMerge Report")
@@ -40,4 +44,4 @@ st.divider()
 
 # Start Button
 if st.button("Get Started", type="primary", use_container_width=True):
-    st.switch_page("pages/1_Carbon_TCFD.py")
+    st.switch_page("pages/1_Emission_TCFD.py")

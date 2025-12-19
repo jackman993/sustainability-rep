@@ -2,12 +2,16 @@
 Step 6: GRI Index
 """
 import streamlit as st
+from shared.ui.sidebar_config import render_sidebar_config
 
 st.set_page_config(
     page_title="GRI Index",
     page_icon="📊",
     layout="wide"
 )
+
+# Sidebar: API Configuration (shared component)
+render_sidebar_config()
 
 st.title("Step 6: GRI Index")
 
@@ -78,7 +82,7 @@ with col1:
         # Clear session state
         for key in list(st.session_state.keys()):
             del st.session_state[key]
-        st.switch_page("pages/1_Carbon_TCFD.py")
+        st.switch_page("pages/1_Emission_TCFD.py")
 
 with col2:
     if st.button("Return Home", use_container_width=True):

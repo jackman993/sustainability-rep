@@ -2,12 +2,16 @@
 Step 3: Company Report
 """
 import streamlit as st
+from shared.ui.sidebar_config import render_sidebar_config
 
 st.set_page_config(
     page_title="Company",
     page_icon="🏢",
     layout="wide"
 )
+
+# Sidebar: API Configuration (shared component)
+render_sidebar_config()
 
 st.title("Step 3: Company Report")
 
@@ -56,4 +60,4 @@ if st.session_state.get("company_done"):
     
     with col2:
         if st.button("Next", type="primary", use_container_width=True):
-            st.switch_page("pages/4_Governance.py")
+            st.switch_page("pages/4_Governance_Social.py")
