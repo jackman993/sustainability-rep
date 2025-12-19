@@ -46,6 +46,60 @@ def render_calculator(
         if not compact_mode:
             st.divider()
     
+    # Industry Selection
+    st.subheader("🏭 Industry Selection")
+    industry_options = [
+        "Manufacturing",
+        "Technology",
+        "Finance",
+        "Retail",
+        "Healthcare",
+        "Energy",
+        "Transportation",
+        "Construction",
+        "Food & Beverage",
+        "Other"
+    ]
+    
+    # Initialize industry in session state if not exists
+    if "carbon_calc_industry" not in st.session_state:
+        st.session_state.carbon_calc_industry = "Manufacturing"
+    if "carbon_calc_industry_custom" not in st.session_state:
+        st.session_state.carbon_calc_industry_custom = ""
+    
+    # Industry selection with option for custom input
+    selected_industry = st.selectbox(
+        "Select Your Industry",
+        options=industry_options,
+        index=industry_options.index(st.session_state.carbon_calc_industry) if st.session_state.carbon_calc_industry in industry_options else 0,
+        help="Select the industry sector for your company, or choose 'Other' to enter custom industry",
+        key="carbon_calc_industry_select"
+    )
+    
+    # If "Other" is selected, show text input for custom industry
+    if selected_industry == "Other":
+        custom_industry = st.text_input(
+            "Enter Your Industry",
+            value=st.session_state.carbon_calc_industry_custom,
+            placeholder="e.g., Agriculture, Tourism, etc.",
+            help="Enter your custom industry name",
+            key="carbon_calc_industry_custom_input"
+        )
+        if custom_industry:
+            industry = custom_industry
+            st.session_state.carbon_calc_industry_custom = custom_industry
+        else:
+            industry = "Other"
+    else:
+        industry = selected_industry
+        st.session_state.carbon_calc_industry_custom = ""
+    
+    # Store industry in session state
+    st.session_state.carbon_calc_industry = industry
+    
+    if not compact_mode:
+        st.divider()
+    
     # Region Selection (optional)
     if show_region:
         st.subheader("📍 Region Selection")
@@ -322,6 +376,7 @@ def render_calculator(
             "scope3_minor": result.get('Scope3_Minor', 0),
             "total_with_s3": result.get('Total_With_S3', result['Total_S1S2']),
             "region": calc_region,
+            "industry": st.session_state.get("carbon_calc_industry", "Manufacturing"),
             "grid_ef": result['Grid_EF'],
             "share_percent": result['Share_Percent'],
             "calculation_date": datetime.now().isoformat(),
