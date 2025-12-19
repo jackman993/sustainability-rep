@@ -46,66 +46,21 @@ def render_calculator(
         if not compact_mode:
             st.divider()
     
-    # Industry Selection
+    # Industry Selection - Text Input
     st.subheader("🏭 Industry Selection")
-    industry_options = [
-        "Manufacturing",
-        "Technology",
-        "Finance",
-        "Retail",
-        "Healthcare",
-        "Energy",
-        "Transportation",
-        "Construction",
-        "Food & Beverage",
-        "Other"
-    ]
     
     # Initialize industry in session state if not exists
     if "carbon_calc_industry" not in st.session_state:
-        st.session_state.carbon_calc_industry = "Manufacturing"
-    if "carbon_calc_industry_custom" not in st.session_state:
-        st.session_state.carbon_calc_industry_custom = ""
+        st.session_state.carbon_calc_industry = ""
     
-    # Industry selection with option for custom input
-    # Determine default value based on session state
-    # When using key parameter, Streamlit will use session_state value if it exists
-    if "carbon_calc_industry_select" not in st.session_state:
-        # Initialize selectbox value based on stored industry
-        if "carbon_calc_industry" in st.session_state:
-            if st.session_state.carbon_calc_industry in industry_options:
-                st.session_state.carbon_calc_industry_select = st.session_state.carbon_calc_industry
-            else:
-                # If custom industry was previously entered, default to "Other"
-                st.session_state.carbon_calc_industry_select = "Other"
-        else:
-            st.session_state.carbon_calc_industry_select = "Manufacturing"
-    
-    selected_industry = st.selectbox(
-        "Select Your Industry",
-        options=industry_options,
-        index=industry_options.index(st.session_state.carbon_calc_industry_select),
-        help="Select the industry sector for your company, or choose 'Other' to enter custom industry",
-        key="carbon_calc_industry_select"
+    # Text input for industry (blank input, user can enter any industry)
+    industry = st.text_input(
+        "Enter Your Industry",
+        value=st.session_state.carbon_calc_industry,
+        placeholder="e.g., Manufacturing, Technology, Agriculture, Tourism & Hospitality, etc.",
+        help="Enter your industry sector name",
+        key="carbon_calc_industry_input"
     )
-    
-    # If "Other" is selected, show text input for custom industry
-    if selected_industry == "Other":
-        custom_industry = st.text_input(
-            "Enter Your Industry",
-            value=st.session_state.carbon_calc_industry_custom,
-            placeholder="e.g., Agriculture, Tourism, etc.",
-            help="Enter your custom industry name",
-            key="carbon_calc_industry_custom_input"
-        )
-        if custom_industry:
-            industry = custom_industry
-            st.session_state.carbon_calc_industry_custom = custom_industry
-        else:
-            industry = "Other"
-    else:
-        industry = selected_industry
-        st.session_state.carbon_calc_industry_custom = ""
     
     # Store industry in session state
     st.session_state.carbon_calc_industry = industry
