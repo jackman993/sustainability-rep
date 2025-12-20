@@ -1,4 +1,4 @@
-﻿"""
+"""
 TCFD Module
 TCFD 表格生成模組
 """
@@ -42,3 +42,4 @@ __all__ = [
     'load_table_module',
     'generate_combined_pptx'
 ]
+
