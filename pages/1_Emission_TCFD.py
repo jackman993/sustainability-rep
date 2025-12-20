@@ -198,6 +198,9 @@ if st.button("🚀 Generate TCFD Tables", type="primary", use_container_width=Tr
             st.error(f"TCFD module error: {str(e)}")
             st.stop()
     
+    # 確保導入 generate_combined_pptx
+    from shared.engine.tcfd import generate_combined_pptx
+    
     # 獲取 API Key（從 sidebar 或 session_state）
     api_key = st.session_state.get("claude_api_key") or st.session_state.get("anthropic_api_key") or st.session_state.get("api_key")
     
@@ -216,35 +219,29 @@ if st.button("🚀 Generate TCFD Tables", type="primary", use_container_width=Tr
     revenue_currency = estimated_revenue.get("currency", "USD")
     revenue_str = f"{revenue_k:.0f}K {revenue_currency}" if revenue_k > 0 else "N/A"
     
-    with st.spinner("正在生成 TCFD 報告..."):
-        # 1. 調用 LLM 生成摘要
-        try:
-            from shared.engine.tcfd.main import call_claude_api
-            
-            summary_prompt = f"""請為以下 TCFD 氣候風險報告寫一個 250 字的摘要：
+    with st.spinner(f"正在生成 TCFD 報告...({'使用 Claude API' if use_api else '使用 Mock 數據'})"):
+        # 1. 生成摘要
+        if use_api:
+            # 使用 Claude API 生成摘要
+            try:
+                from shared.engine.tcfd.main import call_claude_api
+                summary_prompt = f"""請為以下 TCFD 氣候風險報告寫一個 250 字的摘要：
 
 產業：{industry}
 總碳排放量：{carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e
 營收：{revenue_str}
 
-報告包含 7 個表格：
-1. 轉型風險（Transformation Risks）
-2. 實體風險（Physical Risks）
-3. 機會：資源與能源
-4. 機會：產品與服務
-5. 指標與目標（Metrics & Targets）
-6. 系統性風險控制
-7. 營運韌性
+報告包含 7 個表格：轉型風險、實體風險、機會分析、指標目標、系統性風險控制、營運韌性。
 
-請用中文寫一個簡潔的摘要，說明這份報告的主要內容和價值。"""
-            
-            summary = call_claude_api(summary_prompt, api_key)
-            # 只取第一段
-            summary = summary.split('\n\n')[0].strip()[:300]
-            
-        except Exception as e:
-            summary = f"TCFD 氣候風險報告已生成，包含 7 個表格，涵蓋轉型風險、實體風險、機會分析、指標目標等內容。"
-            st.warning(f"摘要生成失敗，使用默認摘要：{str(e)}")
+請用中文寫一個簡潔的摘要。"""
+                summary = call_claude_api(summary_prompt, api_key)
+                summary = summary.split('\n\n')[0].strip()[:300]
+            except Exception as e:
+                summary = f"TCFD 氣候風險報告已生成，包含 7 個表格，涵蓋轉型風險、實體風險、機會分析、指標目標等內容。"
+                st.warning(f"摘要生成失敗，使用默認摘要：{str(e)}")
+        else:
+            # 使用 Mock 數據，直接生成摘要
+            summary = f"""本 TCFD 氣候風險報告針對 {industry} 產業進行全面分析。報告基於當前碳排放數據（總排放量：{carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e）和營收數據（{revenue_str}），涵蓋七大核心領域：轉型風險分析包括政策法規風險和市場技術風險；實體風險評估涵蓋短期極端事件和長期氣候變化影響；機會分析聚焦資源能源效率和產品服務創新；指標目標設定明確的 GHG 排放和氣候相關目標；系統性風險控制強調產業認證和供應鏈透明度；營運韌性評估人力資源能力和供應鏈安全。本報告為企業氣候風險管理和永續發展提供決策依據。"""
         
         # 2. 生成包含 7 個表格的 PPTX（使用 handdrawppt.pptx 模板）
         try:
@@ -260,9 +257,9 @@ if st.button("🚀 Generate TCFD Tables", type="primary", use_container_width=Tr
                 industry=industry,
                 revenue=revenue_str,
                 carbon_emission=carbon_emission,
-                llm_api_key=api_key,
-                llm_provider="anthropic",
-                use_mock=False
+                llm_api_key=api_key if use_api else None,
+                llm_provider="anthropic" if use_api else None,
+                use_mock=not use_api
             )
             
             if not output_file or not output_file.exists():
