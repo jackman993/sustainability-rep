@@ -49,20 +49,10 @@ with tab1:
         st.success("✅ Emission calculation completed! Results are saved and can be used in subsequent steps.")
 
 with tab2:
-    # 最簡單的測試 - 先確保按鈕顯示
-    st.write("## TCFD Tables")
-    st.write("這是一個測試文字")
-    
-    # 按鈕 - 最簡單的版本
-    btn = st.button("Generate TCFD Tables", type="primary")
-    
-    if btn:
-        st.write("按鈕被點擊了！")
-    
-    st.write("---")
-    
-    # 然後才是其他功能
     st.subheader("🏭 TCFD Climate Risk Tables Generator")
+    
+    # 按鈕 - 最簡單的版本，確保一定會顯示
+    generate_btn = st.button("🚀 Generate TCFD Tables", type="primary", use_container_width=True, key="tcfd_btn")
     
     # 嘗試導入 TCFD 模組（延遲導入）
     if not TCFD_AVAILABLE:
@@ -72,6 +62,10 @@ with tab2:
         except Exception as e:
             st.error(f"TCFD module error: {str(e)}")
             TCFD_AVAILABLE = False
+    
+    # 如果按鈕被點擊
+    if generate_btn:
+        st.success("✅ Button clicked!")
     
     # 如果 TCFD 模組可用，顯示完整功能
     if TCFD_AVAILABLE and TCFD_PAGES:
