@@ -334,3 +334,124 @@ def generate_all_tables(
     
     return results
 
+
+
+
+def generate_combined_pptx(
+    output_filename: str = "TCFD_table.pptx",
+    template_path: Path = None,
+    industry: str = None,
+    revenue: str = None,
+    carbon_emission: Dict[str, Any] = None,
+    llm_api_key: str = None,
+    llm_provider: str = None,
+    use_mock: bool = False
+) -> Optional[Path]:
+    """
+    生成包含所有表格的單個 PPTX 文件
+    
+    統一處理邏輯：
+    - table0607 (page_6, page_7): 接受 prs 參數，直接添加到主 PPTX
+    - table01-05 (page_1 到 page_5): 創建新文件，然後複製 slide
+    
+    Args:
+        output_filename: 輸出文件名
+        template_path: 模板文件路徑（handdrawppt.pptx）
+        industry: 產業名稱
+        revenue: 營收
+        carbon_emission: 碳排放數據
+        llm_api_key: LLM API Key
+        llm_provider: LLM 提供商
+        use_mock: 是否使用模擬數據
+    
+    Returns:
+        生成的 PowerPoint 文件路徑
+    """
+    try:
+        from pptx import Presentation
+        import tempfile
+        import os
+        
+        # 載入模板
+        if template_path and template_path.exists():
+            prs = Presentation(str(template_path))
+        else:
+            # 使用默認模板路徑
+            default_template = config.BASE_DIR / "handdrawppt.pptx"
+            if default_template.exists():
+                prs = Presentation(str(default_template))
+            else:
+                prs = Presentation()
+        
+        # 按順序生成每個表格
+        slide_order = ['page_1', 'page_2', 'page_3', 'page_4', 'page_5', 'page_6', 'page_7']
+        
+        for page_key in slide_order:
+            if page_key not in config.TCFD_PAGES:
+                continue
+            
+            page_info = config.TCFD_PAGES[page_key]
+            
+            # 載入表格生成模組
+            table_module = load_table_module(page_info['script_file'])
+            func = getattr(table_module, page_info['entry_function'])
+            
+            # 檢查函數簽名
+            import inspect
+            sig = inspect.signature(func)
+            has_prs_param = 'prs' in sig.parameters
+            
+            # 生成表格內容（所有表格都需要）
+            data_lines = generate_table_content(
+                prompt_id=page_info['prompt_id'],
+                industry=industry,
+                revenue=revenue,
+                carbon_emission=carbon_emission,
+                llm_api_key=llm_api_key,
+                llm_provider=llm_provider,
+                use_mock=use_mock
+            )
+            
+            if has_prs_param:
+                # table0607: 接受 prs 參數，直接添加到主 PPTX
+                # 檢查是否還需要 data_lines 參數
+                if 'data_lines' in sig.parameters:
+                    func(prs, data_lines)
+                else:
+                    func(prs)
+            else:
+                # table01-05: 創建臨時文件，然後複製 slide
+                with tempfile.NamedTemporaryFile(suffix='.pptx', delete=False) as tmp:
+                    temp_file = Path(tmp.name)
+                
+                try:
+                    # 生成臨時文件
+                    func(data_lines, filename=str(temp_file))
+                    
+                    # 複製 slide 到主 PPTX
+                    temp_prs = Presentation(str(temp_file))
+                    for slide in temp_prs.slides:
+                        # 使用空白 layout 創建新 slide
+                        new_slide = prs.slides.add_slide(prs.slide_layouts[6])
+                        # 複製所有形狀
+                        for shape in slide.shapes:
+                            # 複製形狀的 XML
+                            new_shape = new_slide.shapes._spTree.add_child(shape._element)
+                finally:
+                    # 刪除臨時文件
+                    if temp_file.exists():
+                        os.unlink(temp_file)
+        
+        # 保存文件
+        output_dir = config.OUTPUT_DIR
+        output_dir.mkdir(exist_ok=True)
+        output_path = output_dir / output_filename
+        prs.save(str(output_path))
+        
+        return output_path
+        
+    except Exception as e:
+        print(f"Error generating combined PPTX: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return None

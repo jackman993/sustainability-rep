@@ -1,4 +1,4 @@
-"""
+﻿"""
 TCFD Module
 TCFD 表格生成模組
 """
@@ -19,7 +19,8 @@ from .main import (
     generate_table,
     generate_all_tables,
     generate_table_content,
-    load_table_module
+    load_table_module,
+    generate_combined_pptx
 )
 
 __all__ = [
@@ -38,6 +39,6 @@ __all__ = [
     'generate_table',
     'generate_all_tables',
     'generate_table_content',
-    'load_table_module'
+    'load_table_module',
+    'generate_combined_pptx'
 ]
-
