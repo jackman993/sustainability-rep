@@ -8,7 +8,15 @@ import streamlit as st
 from pathlib import Path
 from shared.engine.carbon import render_calculator
 from shared.ui.sidebar_config import render_sidebar_config
-from shared.engine.tcfd import TCFD_PAGES, generate_table, generate_all_tables
+
+# 嘗試導入 TCFD 模組，如果失敗則使用備用方案
+try:
+    from shared.engine.tcfd import TCFD_PAGES, generate_table, generate_all_tables
+    TCFD_AVAILABLE = True
+except Exception as e:
+    st.error(f"TCFD module import error: {str(e)}")
+    TCFD_AVAILABLE = False
+    TCFD_PAGES = {}
 
 st.set_page_config(
     page_title=PAGE_TITLE,
@@ -45,6 +53,10 @@ with tab1:
 
 with tab2:
     st.subheader("🏭 TCFD Climate Risk Tables Generator")
+    
+    if not TCFD_AVAILABLE:
+        st.error("❌ TCFD module is not available. Please check the module files.")
+        st.stop()
     
     # 獲取數據
     industry = st.session_state.get("carbon_calc_industry", "Manufacturing")
@@ -101,15 +113,14 @@ with tab2:
     
     st.divider()
     
-    # 生成按鈕 - 更明顯
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        generate_btn = st.button(
-            "🚀 Generate Selected TCFD Tables",
-            type="primary",
-            use_container_width=True,
-            key="tcfd_generate_btn"
-        )
+    # 生成按鈕 - 確保始終顯示
+    st.markdown("### 🚀 Generate TCFD Tables")
+    generate_btn = st.button(
+        "**Generate Selected TCFD Tables**",
+        type="primary",
+        use_container_width=True,
+        key="tcfd_generate_btn_main"
+    )
     
     if generate_btn:
         if not selected_tables:
