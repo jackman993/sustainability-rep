@@ -189,7 +189,105 @@ st.divider()
 
 # Generate TCFD Button - 在 Next 按鈕之上
 if st.button("🚀 Generate TCFD Tables", type="primary", use_container_width=True, key="generate_tcfd_main"):
-    st.success("✅ Generate TCFD button clicked!")
+    # 檢查 TCFD 模組是否可用
+    if not TCFD_AVAILABLE:
+        try:
+            from shared.engine.tcfd import TCFD_PAGES, generate_table, generate_all_tables, generate_combined_pptx
+            TCFD_AVAILABLE = True
+        except Exception as e:
+            st.error(f"TCFD module error: {str(e)}")
+            st.stop()
+    
+    # 獲取 API Key（從 sidebar 或 session_state）
+    api_key = st.session_state.get("claude_api_key") or st.session_state.get("anthropic_api_key") or st.session_state.get("api_key")
+    
+    if not api_key:
+        # 讓用戶輸入 API Key
+        api_key = st.text_input("請輸入 Claude API Key:", type="password", key="tcfd_api_key_input")
+        if not api_key:
+            st.warning("⚠️ 請輸入 Claude API Key")
+            st.stop()
+    
+    # 獲取數據
+    industry = st.session_state.get("carbon_calc_industry", "Manufacturing")
+    carbon_emission = st.session_state.get("carbon_emission")
+    estimated_revenue = st.session_state.get("estimated_annual_revenue", {})
+    revenue_k = estimated_revenue.get("k_value", 0)
+    revenue_currency = estimated_revenue.get("currency", "USD")
+    revenue_str = f"{revenue_k:.0f}K {revenue_currency}" if revenue_k > 0 else "N/A"
+    
+    with st.spinner("正在生成 TCFD 報告..."):
+        # 1. 調用 LLM 生成摘要
+        try:
+            from shared.engine.tcfd.main import call_claude_api
+            
+            summary_prompt = f"""請為以下 TCFD 氣候風險報告寫一個 250 字的摘要：
+
+產業：{industry}
+總碳排放量：{carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e
+營收：{revenue_str}
+
+報告包含 7 個表格：
+1. 轉型風險（Transformation Risks）
+2. 實體風險（Physical Risks）
+3. 機會：資源與能源
+4. 機會：產品與服務
+5. 指標與目標（Metrics & Targets）
+6. 系統性風險控制
+7. 營運韌性
+
+請用中文寫一個簡潔的摘要，說明這份報告的主要內容和價值。"""
+            
+            summary = call_claude_api(summary_prompt, api_key)
+            # 只取第一段
+            summary = summary.split('\n\n')[0].strip()[:300]
+            
+        except Exception as e:
+            summary = f"TCFD 氣候風險報告已生成，包含 7 個表格，涵蓋轉型風險、實體風險、機會分析、指標目標等內容。"
+            st.warning(f"摘要生成失敗，使用默認摘要：{str(e)}")
+        
+        # 2. 生成包含 7 個表格的 PPTX（使用 handdrawppt.pptx 模板）
+        try:
+            from pathlib import Path
+            
+            # 模板路徑
+            template_path = Path(__file__).parent.parent / "shared" / "engine" / "tcfd" / "handdrawppt.pptx"
+            
+            # 使用 generate_combined_pptx 生成合併的 PPTX
+            output_file = generate_combined_pptx(
+                output_filename="TCFD_table.pptx",
+                template_path=template_path if template_path.exists() else None,
+                industry=industry,
+                revenue=revenue_str,
+                carbon_emission=carbon_emission,
+                llm_api_key=api_key,
+                llm_provider="anthropic",
+                use_mock=False
+            )
+            
+            if not output_file or not output_file.exists():
+                raise Exception("生成 PPTX 失敗")
+            
+            st.success("✅ TCFD 報告生成完成！")
+            
+            # 3. 顯示摘要
+            st.info(f"**報告摘要**：\n\n{summary}")
+            
+            # 4. 顯示下載按鈕
+            with open(output_file, "rb") as f:
+                st.download_button(
+                    "📥 下載 TCFD 報告 (TCFD_table.pptx)",
+                    data=f.read(),
+                    file_name="TCFD_table.pptx",
+                    mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                    use_container_width=True,
+                    key="download_tcfd_report"
+                )
+            
+        except Exception as e:
+            st.error(f"生成失敗：{str(e)}")
+            import traceback
+            st.code(traceback.format_exc())
 
 st.divider()
 
