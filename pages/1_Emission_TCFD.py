@@ -9,14 +9,11 @@ from pathlib import Path
 from shared.engine.carbon import render_calculator
 from shared.ui.sidebar_config import render_sidebar_config
 
-# 嘗試導入 TCFD 模組，如果失敗則使用備用方案
-try:
-    from shared.engine.tcfd import TCFD_PAGES, generate_table, generate_all_tables
-    TCFD_AVAILABLE = True
-except Exception as e:
-    TCFD_AVAILABLE = False
-    TCFD_PAGES = {}
-    # 不在這裡顯示錯誤，讓頁面先載入
+# TCFD 模組導入 - 延遲導入，避免頁面崩潰
+TCFD_AVAILABLE = False
+TCFD_PAGES = {}
+generate_table = None
+generate_all_tables = None
 
 st.set_page_config(
     page_title=PAGE_TITLE,
@@ -54,7 +51,7 @@ with tab1:
 with tab2:
     st.subheader("🏭 TCFD Climate Risk Tables Generator")
     
-    # 生成按鈕 - 最簡單直接的方式，確保一定會顯示
+    # 生成按鈕 - 最簡單直接，確保一定會顯示
     generate_btn = st.button(
         "🚀 Generate TCFD Tables",
         type="primary",
@@ -62,14 +59,21 @@ with tab2:
         key="tcfd_generate_btn"
     )
     
-    st.divider()
+    # 嘗試導入 TCFD 模組（延遲導入）
+    if not TCFD_AVAILABLE:
+        try:
+            from shared.engine.tcfd import TCFD_PAGES, generate_table, generate_all_tables
+            TCFD_AVAILABLE = True
+        except Exception as e:
+            st.error(f"TCFD module error: {str(e)}")
+            TCFD_AVAILABLE = False
     
     # 如果按鈕被點擊
     if generate_btn:
-        st.success("✅ Button clicked! Generating TCFD tables...")
+        st.success("✅ Button clicked!")
     
     # 如果 TCFD 模組可用，顯示完整功能
-    if TCFD_AVAILABLE:
+    if TCFD_AVAILABLE and TCFD_PAGES:
         # 獲取數據
         industry = st.session_state.get("carbon_calc_industry", "Manufacturing")
         carbon_emission = st.session_state.get("carbon_emission")
