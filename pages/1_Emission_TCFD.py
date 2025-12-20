@@ -54,11 +54,7 @@ with tab1:
 with tab2:
     st.subheader("🏭 TCFD Climate Risk Tables Generator")
     
-    # 先顯示一個簡單的生成按鈕，確保按鈕能顯示
-    st.markdown("---")
-    st.markdown("### 🚀 Generate TCFD Tables")
-    
-    # 生成按鈕 - 確保始終顯示
+    # 生成按鈕 - 最簡單直接的方式，確保一定會顯示
     generate_btn = st.button(
         "🚀 Generate TCFD Tables",
         type="primary",
@@ -66,7 +62,11 @@ with tab2:
         key="tcfd_generate_btn"
     )
     
-    st.markdown("---")
+    st.divider()
+    
+    # 如果按鈕被點擊
+    if generate_btn:
+        st.success("✅ Button clicked! Generating TCFD tables...")
     
     # 如果 TCFD 模組可用，顯示完整功能
     if TCFD_AVAILABLE:
@@ -127,60 +127,60 @@ with tab2:
         
         # 如果按鈕被點擊，執行生成邏輯
         if generate_btn:
-                if not selected_tables:
-                    st.warning("⚠️ Please select at least one table to generate")
-                elif not use_mock_bool and not claude_api_key:
-                    st.warning("⚠️ Please enter Claude API Key or select Mock Data")
-                else:
-                    # 即使沒有碳排放數據，也可以使用 Mock 數據生成
-                    if not carbon_emission:
-                        carbon_emission = None
-                    with st.spinner(f"Generating TCFD tables using {'Mock Data' if use_mock_bool else 'Claude API'}..."):
-                        generated_files = {}
-                        errors = []
+            if not selected_tables:
+                st.warning("⚠️ Please select at least one table to generate")
+            elif not use_mock_bool and not claude_api_key:
+                st.warning("⚠️ Please enter Claude API Key or select Mock Data")
+            else:
+                # 即使沒有碳排放數據，也可以使用 Mock 數據生成
+                if not carbon_emission:
+                    carbon_emission = None
+                with st.spinner(f"Generating TCFD tables using {'Mock Data' if use_mock_bool else 'Claude API'}..."):
+                    generated_files = {}
+                    errors = []
+                    
+                    # 準備 API 參數
+                    llm_api_key = None if use_mock_bool else claude_api_key
+                    llm_provider = None if use_mock_bool else "anthropic"
+                    
+                    for page_key in selected_tables:
+                        try:
+                            file_path = generate_table(
+                                page_key=page_key,
+                                industry=industry,
+                                revenue=revenue_str,
+                                carbon_emission=carbon_emission,
+                                llm_api_key=llm_api_key,
+                                llm_provider=llm_provider,
+                                use_mock=use_mock_bool
+                            )
+                            if file_path:
+                                generated_files[page_key] = file_path
+                        except Exception as e:
+                            errors.append(f"{TCFD_PAGES[page_key]['title']}: {str(e)}")
+                    
+                    # 顯示結果
+                    if generated_files:
+                        st.success(f"✅ Successfully generated {len(generated_files)} table(s)")
+                        st.session_state["tcfd_generated_files"] = generated_files
                         
-                        # 準備 API 參數
-                        llm_api_key = None if use_mock_bool else claude_api_key
-                        llm_provider = None if use_mock_bool else "anthropic"
-                        
-                        for page_key in selected_tables:
-                            try:
-                                file_path = generate_table(
-                                    page_key=page_key,
-                                    industry=industry,
-                                    revenue=revenue_str,
-                                    carbon_emission=carbon_emission,
-                                    llm_api_key=llm_api_key,
-                                    llm_provider=llm_provider,
-                                    use_mock=use_mock_bool
+                        # 顯示下載鏈接
+                        st.subheader("Download Generated Tables")
+                        for page_key, file_path in generated_files.items():
+                            page_info = TCFD_PAGES[page_key]
+                            with open(file_path, "rb") as f:
+                                st.download_button(
+                                    label=f"📥 Download {page_info['title']}",
+                                    data=f.read(),
+                                    file_name=Path(file_path).name,
+                                    mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                                    key=f"download_{page_key}"
                                 )
-                                if file_path:
-                                    generated_files[page_key] = file_path
-                            except Exception as e:
-                                errors.append(f"{TCFD_PAGES[page_key]['title']}: {str(e)}")
-                        
-                        # 顯示結果
-                        if generated_files:
-                            st.success(f"✅ Successfully generated {len(generated_files)} table(s)")
-                            st.session_state["tcfd_generated_files"] = generated_files
-                            
-                            # 顯示下載鏈接
-                            st.subheader("Download Generated Tables")
-                            for page_key, file_path in generated_files.items():
-                                page_info = TCFD_PAGES[page_key]
-                                with open(file_path, "rb") as f:
-                                    st.download_button(
-                                        label=f"📥 Download {page_info['title']}",
-                                        data=f.read(),
-                                        file_name=Path(file_path).name,
-                                        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                                        key=f"download_{page_key}"
-                                    )
-                        
-                        if errors:
-                            st.error("❌ Errors occurred:")
-                            for error in errors:
-                                st.error(f"  - {error}")
+                    
+                    if errors:
+                        st.error("❌ Errors occurred:")
+                        for error in errors:
+                            st.error(f"  - {error}")
     else:
         # TCFD 模組不可用時的處理
         if generate_btn:
