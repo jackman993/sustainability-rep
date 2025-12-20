@@ -187,6 +187,12 @@ with tab2:
 
 st.divider()
 
+# Generate TCFD Button - 在 Next 按鈕之上
+if st.button("🚀 Generate TCFD Tables", type="primary", use_container_width=True, key="generate_tcfd_main"):
+    st.success("✅ Generate TCFD button clicked!")
+
+st.divider()
+
 # Navigation
 col1, col2 = st.columns(2)
 
