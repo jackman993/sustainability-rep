@@ -1,4 +1,4 @@
-﻿"""
+"""
 Step 1: Emission & TCFD
 """
 # Page title - single source of truth (must match docstring above)
@@ -82,28 +82,13 @@ with tab2:
         
         st.divider()
         
-        # 數據生成方式選擇
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            use_mock = st.radio(
-                "**Data Source**:",
-                ["Mock Data (測試用)", "Claude API"],
-                key="tcfd_data_source",
-                index=0
-            )
-            use_mock_bool = use_mock == "Mock Data (測試用)"
-        
-        with col2:
-            if not use_mock_bool:
-                claude_api_key = st.text_input(
-                    "**Claude API Key**:",
-                    type="password",
-                    key="tcfd_claude_api_key",
-                    help="Enter your Anthropic Claude API key"
-                )
-            else:
-                claude_api_key = None
-                st.success("✅ Using mock data for testing")
+        # 數據源選擇已移至 sidebar，這裡只顯示當前選擇
+        data_source = st.session_state.get("data_source", "Mock Data")
+        if data_source == "Mock Data":
+            st.info("ℹ️ **數據源**: Mock Data（在左側 sidebar 可切換）")
+        else:
+            api_key_status = "✅ 已設置" if st.session_state.get("claude_api_key") else "⚠️ 未設置"
+            st.info(f"ℹ️ **數據源**: Claude API（在左側 sidebar 可切換）| API Key: {api_key_status}")
         
         st.divider()
         
@@ -124,12 +109,17 @@ with tab2:
         
         st.divider()
         
+        # 從 sidebar 獲取數據源
+        data_source = st.session_state.get("data_source", "Mock Data")
+        use_mock_bool = (data_source == "Mock Data")
+        claude_api_key = st.session_state.get("claude_api_key") or ""
+        
         # 如果按鈕被點擊，執行生成邏輯
         if generate_btn:
             if not selected_tables:
                 st.warning("⚠️ Please select at least one table to generate")
             elif not use_mock_bool and not claude_api_key:
-                st.warning("⚠️ Please enter Claude API Key or select Mock Data")
+                st.warning("⚠️ Please enter Claude API Key in sidebar or select Mock Data")
             else:
                 # 即使沒有碳排放數據，也可以使用 Mock 數據生成
                 if not carbon_emission:
@@ -201,27 +191,26 @@ if st.button("🚀 Generate TCFD Tables", type="primary", use_container_width=Tr
     # 確保導入 generate_combined_pptx
     from shared.engine.tcfd import generate_combined_pptx
     
-    # 獲取 API Key（從 sidebar 或 session_state）
-    api_key = st.session_state.get("claude_api_key") or st.session_state.get("anthropic_api_key") or st.session_state.get("api_key")
+    # 從 sidebar 獲取數據源選擇
+    data_source = st.session_state.get("data_source", "Mock Data")
+    use_api = (data_source == "Claude API")
     
-    if not api_key:
-        # 讓用戶輸入 API Key
-        api_key = st.text_input("請輸入 Claude API Key:", type="password", key="tcfd_api_key_input")
-        if not api_key:
-            st.warning("⚠️ 請輸入 Claude API Key")
-            st.stop()
+    # 獲取 API Key（從 sidebar）
+    api_key = st.session_state.get("claude_api_key") or ""
     
-    # 根據是否有 API Key 決定使用 API 還是 Mock
-    use_api = bool(api_key)
-
+    # 如果選擇 Claude API 但沒有 API Key，顯示警告
+    if use_api and not api_key:
+        st.warning("⚠️ 請在左側 sidebar 輸入 Claude API Key")
+        st.stop()
+    
     # 獲取數據
-    industry = st.session_state.get("carbon_calc_industry", "Manufacturing")
+    industry = st.session_state.get("carbon_calc_industry", "Manufacturing")    
     carbon_emission = st.session_state.get("carbon_emission")
-    estimated_revenue = st.session_state.get("estimated_annual_revenue", {})
+    estimated_revenue = st.session_state.get("estimated_annual_revenue", {})    
     revenue_k = estimated_revenue.get("k_value", 0)
     revenue_currency = estimated_revenue.get("currency", "USD")
     revenue_str = f"{revenue_k:.0f}K {revenue_currency}" if revenue_k > 0 else "N/A"
-    
+
     with st.spinner(f"正在生成 TCFD 報告...({'使用 Claude API' if use_api else '使用 Mock 數據'})"):
         # 1. 生成摘要
         if use_api:
