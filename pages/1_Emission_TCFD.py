@@ -44,7 +44,7 @@ with tab1:
         st.success("✅ Emission calculation completed! Results are saved and can be used in subsequent steps.")
 
 with tab2:
-    st.write("**TCFD Climate Risk Tables**")
+    st.subheader("🏭 TCFD Climate Risk Tables Generator")
     
     # 獲取數據
     industry = st.session_state.get("carbon_calc_industry", "Manufacturing")
@@ -54,26 +54,16 @@ with tab2:
     revenue_currency = estimated_revenue.get("currency", "USD")
     revenue_str = f"{revenue_k:.0f}K {revenue_currency}" if revenue_k > 0 else "N/A"
     
-    # 顯示當前數據
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.info(f"**Industry**: {industry}")
-    with col2:
-        if carbon_emission:
-            st.info(f"**Total Emissions**: {carbon_emission.get('total_tco2e', 'N/A')} tCO2e")
-        else:
-            st.warning("⚠️ Please complete emission calculation first")
-    with col3:
-        st.info(f"**Revenue**: {revenue_str}")
+    # 顯示當前數據（簡化顯示）
+    st.info(f"📊 **Current Data**: Industry: {industry} | Emissions: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e | Revenue: {revenue_str}")
     
     st.divider()
     
     # 數據生成方式選擇
-    st.subheader("Data Generation Method")
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([1, 1])
     with col1:
         use_mock = st.radio(
-            "Choose data source:",
+            "**Data Source**:",
             ["Mock Data (測試用)", "Claude API"],
             key="tcfd_data_source",
             index=0
@@ -83,19 +73,19 @@ with tab2:
     with col2:
         if not use_mock_bool:
             claude_api_key = st.text_input(
-                "Claude API Key:",
+                "**Claude API Key**:",
                 type="password",
                 key="tcfd_claude_api_key",
                 help="Enter your Anthropic Claude API key"
             )
         else:
             claude_api_key = None
-            st.info("💡 Using mock data for testing")
+            st.success("✅ Using mock data for testing")
     
     st.divider()
     
     # 表格選擇
-    st.subheader("Select Tables to Generate")
+    st.subheader("📋 Select Tables to Generate")
     
     # 顯示所有可用的表格
     selected_tables = []
@@ -103,7 +93,7 @@ with tab2:
     for idx, (page_key, page_info) in enumerate(TCFD_PAGES.items()):
         with cols[idx % 4]:
             if st.checkbox(
-                f"Table {idx + 1}: {page_info['title']}",
+                f"**Table {idx + 1}**: {page_info['title']}",
                 key=f"tcfd_table_{page_key}",
                 value=True
             ):
@@ -111,13 +101,25 @@ with tab2:
     
     st.divider()
     
-    # 生成按鈕
-    if st.button("Generate Selected TCFD Tables", type="primary", use_container_width=True):
+    # 生成按鈕 - 更明顯
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        generate_btn = st.button(
+            "🚀 Generate Selected TCFD Tables",
+            type="primary",
+            use_container_width=True,
+            key="tcfd_generate_btn"
+        )
+    
+    if generate_btn:
         if not selected_tables:
             st.warning("⚠️ Please select at least one table to generate")
         elif not use_mock_bool and not claude_api_key:
             st.warning("⚠️ Please enter Claude API Key or select Mock Data")
         else:
+            # 即使沒有碳排放數據，也可以使用 Mock 數據生成
+            if not carbon_emission:
+                carbon_emission = None
             with st.spinner(f"Generating TCFD tables using {'Mock Data' if use_mock_bool else 'Claude API'}..."):
                 generated_files = {}
                 errors = []
