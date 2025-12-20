@@ -1,4 +1,4 @@
-"""
+﻿"""
 Step 1: Emission & TCFD
 """
 # Page title - single source of truth (must match docstring above)
@@ -211,6 +211,9 @@ if st.button("🚀 Generate TCFD Tables", type="primary", use_container_width=Tr
             st.warning("⚠️ 請輸入 Claude API Key")
             st.stop()
     
+    # 根據是否有 API Key 決定使用 API 還是 Mock
+    use_api = bool(api_key)
+
     # 獲取數據
     industry = st.session_state.get("carbon_calc_industry", "Manufacturing")
     carbon_emission = st.session_state.get("carbon_emission")
