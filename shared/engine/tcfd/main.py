@@ -510,75 +510,77 @@ def generate_combined_pptx(
                 raise Exception(error_msg) from table_error
         
         # 保存文件 - 強制使用新的路徑管理系統（output/{session_id}/）
-        # 在 Streamlit 環境中，強制使用新路徑系統
+        # 優先使用 Streamlit 會話路徑，只有在完全無法使用時才回退
         output_path = None
         
+        # 嘗試使用新路徑系統
         try:
             import streamlit as st
-            # 檢查是否在 Streamlit 環境中
+            from ..output_config import OUTPUT_ROOT, OUTPUT_FILENAMES
+            
+            # 獲取 session_id（優先從 session_state，否則生成新的）
+            import uuid
             if hasattr(st, 'session_state'):
-                from ..output_config import get_step_output_dir, OUTPUT_FILENAMES, OUTPUT_ROOT
-                
-                # 強制使用新路徑系統
-                try:
-                    session_dir = get_step_output_dir('tcfd')
-                except Exception as e:
-                    # 如果獲取 session_dir 失敗，嘗試直接構建路徑
-                    print(f"[WARNING] get_step_output_dir failed: {e}, trying direct path construction")
-                    import uuid
-                    session_id = st.session_state.get('session_id', str(uuid.uuid4()))
-                    if 'session_id' not in st.session_state:
-                        st.session_state['session_id'] = session_id
-                    session_dir = OUTPUT_ROOT / session_id
-                    session_dir.mkdir(parents=True, exist_ok=True)
-                
-                # 確保目錄存在
-                session_dir.mkdir(parents=True, exist_ok=True)
-                
-                # 構建輸出路徑
-                if output_filename == "TCFD_table.pptx" or output_filename == OUTPUT_FILENAMES.get('tcfd', 'TCFD_table.pptx'):
-                    output_path = session_dir / OUTPUT_FILENAMES.get('tcfd', 'TCFD_table.pptx')
-                else:
-                    output_path = session_dir / output_filename
-                
-                # 調試信息：打印實際保存路徑
-                print(f"[DEBUG] ✅ Using NEW path system: {output_path}")
-                print(f"[DEBUG] Session dir: {session_dir}")
-                print(f"[DEBUG] OUTPUT_ROOT: {OUTPUT_ROOT}")
+                session_id = st.session_state.get('session_id')
+                if not session_id:
+                    session_id = str(uuid.uuid4())
+                    st.session_state['session_id'] = session_id
+            else:
+                session_id = str(uuid.uuid4())
+            
+            # 直接構建新路徑（不依賴 get_step_output_dir，避免可能的異常）
+            session_dir = OUTPUT_ROOT / session_id
+            session_dir.mkdir(parents=True, exist_ok=True)
+            
+            # 構建輸出路徑
+            if output_filename == "TCFD_table.pptx" or output_filename == OUTPUT_FILENAMES.get('tcfd', 'TCFD_table.pptx'):
+                output_path = session_dir / OUTPUT_FILENAMES.get('tcfd', 'TCFD_table.pptx')
+            else:
+                output_path = session_dir / output_filename
+            
+            # 調試信息
+            print(f"[DEBUG] ✅ Using NEW path system")
+            print(f"[DEBUG] OUTPUT_ROOT: {OUTPUT_ROOT}")
+            print(f"[DEBUG] Session ID: {session_id}")
+            print(f"[DEBUG] Session dir: {session_dir}")
+            print(f"[DEBUG] Output path: {output_path}")
+            
         except ImportError:
-            # 不在 Streamlit 環境中，使用舊邏輯
-            print(f"[INFO] Streamlit not available, using fallback")
+            # Streamlit 不可用，使用舊邏輯
+            print(f"[WARNING] Streamlit not available, using OLD path system")
             output_dir = config.OUTPUT_DIR
             output_dir.mkdir(exist_ok=True)
             output_path = output_dir / output_filename
         except Exception as e:
-            # 其他錯誤，記錄但強制使用新路徑
+            # 其他錯誤，記錄但嘗試最後的恢復
             import traceback
-            print(f"[ERROR] Error in path system: {e}")
+            print(f"[ERROR] Error in NEW path system: {e}")
             print(f"[ERROR] Traceback: {traceback.format_exc()}")
-            # 嘗試直接構建新路徑
+            
+            # 最後嘗試：直接使用 OUTPUT_ROOT（如果可用）
             try:
                 from ..output_config import OUTPUT_ROOT
-                import streamlit as st
                 import uuid
-                session_id = st.session_state.get('session_id', str(uuid.uuid4()))
-                session_dir = OUTPUT_ROOT / session_id
+                # 生成臨時 session_id
+                temp_session_id = str(uuid.uuid4())
+                session_dir = OUTPUT_ROOT / temp_session_id
                 session_dir.mkdir(parents=True, exist_ok=True)
                 output_path = session_dir / output_filename
-                print(f"[DEBUG] ✅ Recovered: Using NEW path: {output_path}")
-            except:
-                # 最後的回退
-                print(f"[WARNING] ⚠️ Final fallback to OLD path system")
+                print(f"[DEBUG] ✅ Recovered with temp session: {output_path}")
+            except Exception as final_e:
+                # 完全失敗，使用舊邏輯
+                print(f"[WARNING] ⚠️ Complete failure, using OLD path system: {final_e}")
                 output_dir = config.OUTPUT_DIR
                 output_dir.mkdir(exist_ok=True)
                 output_path = output_dir / output_filename
         
-        # 確保 output_path 不為 None
+        # 最終檢查：確保 output_path 不為 None
         if output_path is None:
-            print(f"[ERROR] output_path is None! Using fallback")
+            print(f"[ERROR] ⚠️ output_path is None! Using OLD path system as last resort")
             output_dir = config.OUTPUT_DIR
             output_dir.mkdir(exist_ok=True)
             output_path = output_dir / output_filename
+            print(f"[DEBUG] Fallback path: {output_path}")
         
         # 如果文件已存在且被鎖定，使用帶時間戳的文件名
         if output_path.exists():
