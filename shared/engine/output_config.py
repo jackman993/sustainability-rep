@@ -18,6 +18,7 @@ output\{session_id}\Company_report.pptx
 from pathlib import Path
 import uuid
 import os
+import tempfile
 
 # 延遲導入 streamlit，避免在非 Streamlit 環境中出錯
 def _get_streamlit():
@@ -34,7 +35,13 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 OUTPUT_ROOT = PROJECT_ROOT / "output"
 SESSIONS_DIR = OUTPUT_ROOT  # 直接使用 output 作為會話根目錄
 
+# 方案B：臨時目錄配置
+USE_TEMP_DIR = True  # 是否使用臨時目錄
+TEMP_BASE_DIR = None  # 臨時目錄基礎路徑（會在首次使用時初始化）
+
 # 診斷信息：打印路徑計算結果
+print(f"[DIAGNOSIS] ========== 輸出配置初始化 ==========")
+print(f"[DIAGNOSIS] 使用方案: {'方案B - 臨時目錄 + 強制權限' if USE_TEMP_DIR else '方案A - 項目目錄'}")
 print(f"[DIAGNOSIS] output_config.py 位置: {Path(__file__).resolve()}")
 print(f"[DIAGNOSIS] PROJECT_ROOT 計算結果: {PROJECT_ROOT}")
 print(f"[DIAGNOSIS] OUTPUT_ROOT: {OUTPUT_ROOT}")
@@ -42,6 +49,9 @@ print(f"[DIAGNOSIS] OUTPUT_ROOT 是否存在: {OUTPUT_ROOT.exists()}")
 print(f"[DIAGNOSIS] OUTPUT_ROOT 父目錄是否存在: {OUTPUT_ROOT.parent.exists()}")
 print(f"[DIAGNOSIS] OUTPUT_ROOT 父目錄是否可寫: {OUTPUT_ROOT.parent.exists() and os.access(OUTPUT_ROOT.parent, os.W_OK) if OUTPUT_ROOT.parent.exists() else False}")
 print(f"[DIAGNOSIS] OUTPUT_ROOT 是否可寫: {OUTPUT_ROOT.exists() and os.access(OUTPUT_ROOT, os.W_OK) if OUTPUT_ROOT.exists() else False}")
+if USE_TEMP_DIR:
+    print(f"[DIAGNOSIS] 臨時目錄路徑: {tempfile.gettempdir()}")
+print(f"[DIAGNOSIS] =====================================")
 
 def get_session_id():
     """獲取當前會話 ID"""
@@ -89,29 +99,68 @@ def get_session_id():
             pass
         return session_id
 
+def get_temp_base_dir():
+    """獲取臨時目錄基礎路徑（方案B：使用臨時目錄）"""
+    global TEMP_BASE_DIR
+    if TEMP_BASE_DIR is None:
+        # 創建臨時目錄
+        temp_base = Path(tempfile.gettempdir()) / "sustainability_reports"
+        temp_base.mkdir(parents=True, exist_ok=True)
+        
+        # 強制設置權限
+        try:
+            os.chmod(str(temp_base), 0o777)
+        except:
+            pass
+        
+        TEMP_BASE_DIR = temp_base
+        print(f"[DIAGNOSIS] 臨時目錄基礎路徑: {TEMP_BASE_DIR}")
+        print(f"[DIAGNOSIS] 臨時目錄是否存在: {TEMP_BASE_DIR.exists()}")
+        print(f"[DIAGNOSIS] 臨時目錄是否可寫: {os.access(TEMP_BASE_DIR, os.W_OK)}")
+    
+    return TEMP_BASE_DIR
+
 def get_session_output_dir():
-    """獲取當前會話的輸出目錄（兩層結構：output\{session_id}）"""
+    """獲取當前會話的輸出目錄（兩層結構：output\{session_id} 或 temp\{session_id}）"""
     session_id = get_session_id()
-    session_dir = SESSIONS_DIR / session_id
+    
+    # 方案B：使用臨時目錄
+    if USE_TEMP_DIR:
+        temp_base = get_temp_base_dir()
+        session_dir = temp_base / session_id
+        parent_dir = temp_base  # 使用臨時目錄作為父目錄
+        print(f"[DIAGNOSIS] 使用臨時目錄方案")
+    else:
+        # 原方案：使用項目目錄
+        session_dir = SESSIONS_DIR / session_id
+        parent_dir = SESSIONS_DIR  # 使用項目目錄作為父目錄
+        print(f"[DIAGNOSIS] 使用項目目錄方案")
     
     # 強制創建目錄（多次嘗試）
     print(f"[DIAGNOSIS] 嘗試創建目錄: {session_dir}")
-    print(f"[DIAGNOSIS] SESSIONS_DIR: {SESSIONS_DIR}")
-    print(f"[DIAGNOSIS] SESSIONS_DIR 是否存在: {SESSIONS_DIR.exists()}")
-    print(f"[DIAGNOSIS] SESSIONS_DIR 是否可寫: {SESSIONS_DIR.exists() and os.access(SESSIONS_DIR, os.W_OK) if SESSIONS_DIR.exists() else False}")
+    print(f"[DIAGNOSIS] 父目錄: {parent_dir}")
+    print(f"[DIAGNOSIS] 父目錄是否存在: {parent_dir.exists()}")
+    print(f"[DIAGNOSIS] 父目錄是否可寫: {parent_dir.exists() and os.access(parent_dir, os.W_OK) if parent_dir.exists() else False}")
     
-    # 先確保父目錄（SESSIONS_DIR）存在
-    if not SESSIONS_DIR.exists():
-        print(f"[DIAGNOSIS] 父目錄不存在，先創建父目錄: {SESSIONS_DIR}")
+    # 先確保父目錄存在
+    if not parent_dir.exists():
+        print(f"[DIAGNOSIS] 父目錄不存在，先創建父目錄: {parent_dir}")
         try:
-            SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
+            parent_dir.mkdir(parents=True, exist_ok=True)
         except Exception as parent_ex:
             print(f"[WARNING] 創建父目錄失敗: {parent_ex}")
             try:
-                os.makedirs(str(SESSIONS_DIR), exist_ok=True, mode=0o777)
+                os.makedirs(str(parent_dir), exist_ok=True, mode=0o777)
             except Exception as parent_ex2:
                 print(f"[ERROR] os.makedirs 創建父目錄也失敗: {parent_ex2}")
-                raise Exception(f"無法創建父目錄 {SESSIONS_DIR}: {parent_ex}, {parent_ex2}")
+                raise Exception(f"無法創建父目錄 {parent_dir}: {parent_ex}, {parent_ex2}")
+    
+    # 強制設置父目錄權限
+    try:
+        os.chmod(str(parent_dir), 0o777)
+        print(f"[DIAGNOSIS] 父目錄權限設置完成")
+    except Exception as perm_ex:
+        print(f"[WARNING] 無法設置父目錄權限: {perm_ex}")
     
     # 方法 1: 標準 mkdir
     try:
@@ -125,10 +174,10 @@ def get_session_output_dir():
             print(f"[DIAGNOSIS] 逐級創建成功")
         except Exception as e2:
             print(f"[WARNING] 逐級創建失敗: {e2}")
-            # 方法 3: 使用 os.makedirs 強制創建
+            # 方法 3: 使用 os.makedirs 強制創建（方案B：強制權限）
             try:
                 os.makedirs(str(session_dir), exist_ok=True, mode=0o777)
-                print(f"[DIAGNOSIS] os.makedirs() 成功")
+                print(f"[DIAGNOSIS] os.makedirs() 成功（強制權限 0o777）")
             except Exception as e3:
                 print(f"[ERROR] 所有創建方法都失敗: {e3}")
                 raise Exception(f"無法創建輸出目錄 {session_dir}: {e3}")
@@ -137,21 +186,31 @@ def get_session_output_dir():
     if not session_dir.exists():
         raise Exception(f"目錄創建失敗，目錄不存在: {session_dir}")
     
-    # 驗證目錄是否可寫，並嘗試修復權限
-    if not os.access(session_dir, os.W_OK):
+    # 方案B：強制設置權限（無論是否可寫都設置）
+    try:
+        os.chmod(str(session_dir), 0o777)
+        print(f"[DIAGNOSIS] 強制設置目錄權限為 0o777")
+    except Exception as e:
+        print(f"[WARNING] 無法設置目錄權限: {e}")
+    
+    # 驗證目錄是否可寫
+    is_writable = os.access(session_dir, os.W_OK)
+    if not is_writable:
         print(f"[WARNING] 目錄存在但不可寫: {session_dir}")
-        # 嘗試修改權限
+        # 再次嘗試設置權限
         try:
             os.chmod(str(session_dir), 0o777)
-            print(f"[DIAGNOSIS] 嘗試修改權限成功")
-            # 再次檢查
-            if not os.access(session_dir, os.W_OK):
-                print(f"[WARNING] 修改權限後仍不可寫: {session_dir}")
+            is_writable = os.access(session_dir, os.W_OK)
+            if is_writable:
+                print(f"[DIAGNOSIS] 重新設置權限後可寫")
+            else:
+                print(f"[WARNING] 重新設置權限後仍不可寫: {session_dir}")
         except Exception as e:
-            print(f"[WARNING] 無法修改權限: {e}")
+            print(f"[WARNING] 無法重新設置權限: {e}")
     
-    print(f"[DIAGNOSIS] 最終目錄狀態: 存在={session_dir.exists()}, 可寫={os.access(session_dir, os.W_OK)}")
-    print(f"[DIAGNOSIS] Session directory 是否可寫: {os.access(session_dir, os.W_OK)}")
+    print(f"[DIAGNOSIS] 最終目錄狀態: 存在={session_dir.exists()}, 可寫={is_writable}")
+    print(f"[DIAGNOSIS] Session directory 是否可寫: {is_writable}")
+    print(f"[DIAGNOSIS] 使用方案: {'臨時目錄' if USE_TEMP_DIR else '項目目錄'}")
     return session_dir
 
 # 各步驟的輸出目錄（簡化：直接返回會話目錄，文件通過文件名區分）
