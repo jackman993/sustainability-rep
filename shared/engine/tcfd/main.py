@@ -509,9 +509,17 @@ def generate_combined_pptx(
                 # 重新拋出錯誤，讓外層處理
                 raise Exception(error_msg) from table_error
         
-        # 保存文件 - 一行搞定
-        from ..output_config import get_session_output_dir
-        return prs.save(str(output_path := get_session_output_dir() / "TCFD_table.pptx")) or output_path
+        # 保存文件 - tcfd 引擎獨立處理，不依賴 shared 引擎
+        import streamlit as st
+        import uuid
+        from pathlib import Path
+        # 直接計算路徑：從 main.py 向上四級到項目根目錄
+        output_dir = Path(__file__).resolve().parent.parent.parent.parent / "output"
+        session_id = st.session_state.setdefault('session_id', str(uuid.uuid4()))
+        output_path = output_dir / session_id / output_filename
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        prs.save(str(output_path))
+        return output_path
         
     except Exception as e:
         error_msg = f"Error generating combined PPTX: {str(e)}"
