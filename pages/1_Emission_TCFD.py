@@ -56,131 +56,219 @@ with tab1:
         st.success("✅ Emission calculation completed! Results are saved and can be used in subsequent steps.")
 
 with tab2:
-    st.subheader("🏭 TCFD Climate Risk Tables Generator")
-    
-    # 按鈕 - 最簡單的版本，確保一定會顯示
-    generate_btn = st.button("🚀 Generate TCFD Tables", type="primary", use_container_width=True, key="tcfd_btn")
+    st.subheader("🏭 TCFD Complete Report Generator")
     
     # 嘗試導入 TCFD 模組（延遲導入）
     if not TCFD_AVAILABLE:
         try:
-            from shared.engine.tcfd import TCFD_PAGES, generate_table, generate_all_tables
+            from shared.engine.tcfd import generate_combined_pptx
             TCFD_AVAILABLE = True
         except Exception as e:
             st.error(f"TCFD module error: {str(e)}")
             TCFD_AVAILABLE = False
     
-    # 如果按鈕被點擊
-    if generate_btn:
-        st.success("✅ Button clicked!")
+    # 獲取數據
+    industry = st.session_state.get("carbon_calc_industry", "Manufacturing")
+    carbon_emission = st.session_state.get("carbon_emission")
+    estimated_revenue = st.session_state.get("estimated_annual_revenue", {})
+    revenue_k = estimated_revenue.get("k_value", 0)
+    revenue_currency = estimated_revenue.get("currency", "USD")
+    revenue_str = f"{revenue_k:.0f}K {revenue_currency}" if revenue_k > 0 else "N/A"
     
-    # 如果 TCFD 模組可用，顯示完整功能
-    if TCFD_AVAILABLE and TCFD_PAGES:
-        # 獲取數據
-        industry = st.session_state.get("carbon_calc_industry", "Manufacturing")
-        carbon_emission = st.session_state.get("carbon_emission")
-        estimated_revenue = st.session_state.get("estimated_annual_revenue", {})
-        revenue_k = estimated_revenue.get("k_value", 0)
-        revenue_currency = estimated_revenue.get("currency", "USD")
-        revenue_str = f"{revenue_k:.0f}K {revenue_currency}" if revenue_k > 0 else "N/A"
-        
-        # 顯示當前數據
-        st.info(f"📊 **Current Data**: Industry: {industry} | Emissions: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e | Revenue: {revenue_str}")
-        
-        st.divider()
-        
-        # 數據源選擇已移至 sidebar，這裡只顯示當前選擇
-        data_source = st.session_state.get("data_source", "Mock Data")
-        if data_source == "Mock Data":
-            st.info("ℹ️ **數據源**: Mock Data（在左側 sidebar 可切換）")
-        else:
-            api_key_status = "✅ 已設置" if st.session_state.get("claude_api_key") else "⚠️ 未設置"
-            st.info(f"ℹ️ **數據源**: Claude API（在左側 sidebar 可切換）| API Key: {api_key_status}")
-        
-        st.divider()
-        
-        # 表格選擇
-        st.subheader("📋 Select Tables to Generate")
-        
-        # 顯示所有可用的表格
-        selected_tables = []
-        cols = st.columns(4)
-        for idx, (page_key, page_info) in enumerate(TCFD_PAGES.items()):
-            with cols[idx % 4]:
-                if st.checkbox(
-                    f"**Table {idx + 1}**: {page_info['title']}",
-                    key=f"tcfd_table_{page_key}",
-                    value=True
-                ):
-                    selected_tables.append(page_key)
-        
-        st.divider()
-        
-        # 從 sidebar 獲取數據源
-        data_source = st.session_state.get("data_source", "Mock Data")
-        use_mock_bool = (data_source == "Mock Data")
-        claude_api_key = st.session_state.get("claude_api_key") or ""
-        
-        # 如果按鈕被點擊，執行生成邏輯
-        if generate_btn:
-            if not selected_tables:
-                st.warning("⚠️ Please select at least one table to generate")
-            elif not use_mock_bool and not claude_api_key:
-                st.warning("⚠️ Please enter Claude API Key in sidebar or select Mock Data")
-            else:
-                # 即使沒有碳排放數據，也可以使用 Mock 數據生成
-                if not carbon_emission:
-                    carbon_emission = None
-                with st.spinner(f"Generating TCFD tables using {'Mock Data' if use_mock_bool else 'Claude API'}..."):
-                    generated_files = {}
-                    errors = []
-                    
-                    # 準備 API 參數
-                    llm_api_key = None if use_mock_bool else claude_api_key
-                    llm_provider = None if use_mock_bool else "anthropic"
-                    
-                    for page_key in selected_tables:
-                        try:
-                            file_path = generate_table(
-                                page_key=page_key,
-                                industry=industry,
-                                revenue=revenue_str,
-                                carbon_emission=carbon_emission,
-                                llm_api_key=llm_api_key,
-                                llm_provider=llm_provider,
-                                use_mock=use_mock_bool
-                            )
-                            if file_path:
-                                generated_files[page_key] = file_path
-                        except Exception as e:
-                            errors.append(f"{TCFD_PAGES[page_key]['title']}: {str(e)}")
-                    
-                    # 顯示結果
-                    if generated_files:
-                        st.success(f"✅ Successfully generated {len(generated_files)} table(s)")
-                        st.session_state["tcfd_generated_files"] = generated_files
-                        
-                        # 顯示下載鏈接
-                        st.subheader("Download Generated Tables")
-                        for page_key, file_path in generated_files.items():
-                            page_info = TCFD_PAGES[page_key]
-                            with open(file_path, "rb") as f:
-                                st.download_button(
-                                    label=f"📥 Download {page_info['title']}",
-                                    data=f.read(),
-                                    file_name=Path(file_path).name,
-                                    mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                                    key=f"download_{page_key}"
-                                )
-                    
-                    if errors:
-                        st.error("❌ Errors occurred:")
-                        for error in errors:
-                            st.error(f"  - {error}")
+    # 顯示當前數據
+    st.info(f"📊 **Current Data**: Industry: {industry} | Emissions: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e | Revenue: {revenue_str}")
+    
+    st.divider()
+    
+    # 數據源選擇狀態
+    data_source = st.session_state.get("data_source", "Mock Data")
+    if data_source == "Mock Data":
+        st.info("ℹ️ **Data Source**: Mock Data (可在左側 sidebar 切換為 Claude API)")
     else:
-        # TCFD 模組不可用時的處理
-        if generate_btn:
+        api_key_status = "✅ Set" if st.session_state.get("claude_api_key") else "⚠️ Not Set"
+        st.info(f"ℹ️ **Data Source**: Claude API (可在左側 sidebar 切換) | API Key: {api_key_status}")
+    
+    st.divider()
+    
+    # 顯示報告內容說明
+    st.markdown("""
+    **Report Contents:**
+    - Complete TCFD report with 7 tables:
+      1. Transformation Risks
+      2. Physical Risks  
+      3. Opportunities (Resource & Energy)
+      4. Opportunities (Products & Services)
+      5. Metrics and Targets
+      6. Systemic Risk Control
+      7. Operational Resilience
+    - Executive summary (English, ~250 words)
+    """)
+    
+    # 生成按鈕
+    generate_btn = st.button("🚀 Generate Complete TCFD Report", type="primary", use_container_width=True, key="tcfd_btn_tab2")
+    
+    # 顯示生成狀態（如果有）
+    if st.session_state.get("tcfd_report_generated_tab2"):
+        st.success("✅ TCFD Report generated successfully!")
+        st.session_state["tcfd_report_generated_tab2"] = False
+    
+    # 如果按鈕被點擊，執行生成邏輯
+    if generate_btn:
+        if not TCFD_AVAILABLE:
             st.error("❌ TCFD module is not available. Please check the module files.")
+            st.stop()
+        
+        # 確保導入 generate_combined_pptx
+        from shared.engine.tcfd import generate_combined_pptx
+        
+        # 從 sidebar 獲取數據源選擇
+        data_source = st.session_state.get("data_source", "Mock Data")
+        use_api = (data_source == "Claude API")
+        
+        # 獲取 API Key（從 sidebar）
+        api_key = st.session_state.get("claude_api_key") or ""
+        
+        # 如果選擇 Claude API 但沒有 API Key，顯示警告
+        if use_api and not api_key:
+            st.warning("⚠️ Please enter Claude API Key in sidebar or select Mock Data")
+            st.stop()
+        
+        # 創建進度顯示
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        try:
+            # 步驟 1: 生成摘要
+            status_text.text("Step 1/3: Generating executive summary...")
+            progress_bar.progress(20)
+            
+            summary = ""
+            if use_api:
+                try:
+                    from shared.engine.tcfd.main import call_claude_api
+                    summary_prompt = f"""Please write a 250-word summary for the following TCFD climate risk report:
+
+Industry: {industry}
+Total Carbon Emissions: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e
+Revenue: {revenue_str}
+
+The report contains 7 tables covering: Transformation Risks, Physical Risks, Opportunities (Resource & Energy Efficiency, Products & Services), Metrics and Targets, Systemic Risk Control, and Operational Resilience.
+
+Please write a concise summary in English, approximately 250 words, that highlights the key climate risks, opportunities, and strategic recommendations for the {industry} industry based on the TCFD framework analysis."""
+                    summary = call_claude_api(summary_prompt, api_key)
+                    summary = summary.split('\n\n')[0].strip()
+                    if len(summary.split()) > 300:
+                        words = summary.split()[:250]
+                        summary = ' '.join(words) + "..."
+                except Exception as e:
+                    summary = f"This TCFD climate risk report provides a comprehensive analysis for the {industry} industry. The report includes 7 tables covering transformation risks, physical risks, opportunities, metrics and targets, systemic risk control, and operational resilience. Based on current carbon emission data (Total: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e) and revenue data ({revenue_str}), this report offers strategic insights for climate risk management and sustainable development."
+                    st.warning(f"Summary generation failed, using default summary: {str(e)}")
+            else:
+                api_key_for_summary = st.session_state.get("claude_api_key") or ""
+                if api_key_for_summary:
+                    try:
+                        from shared.engine.tcfd.main import call_claude_api
+                        summary_prompt = f"""Please write a 250-word summary for the following TCFD climate risk report:
+
+Industry: {industry}
+Total Carbon Emissions: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e
+Revenue: {revenue_str}
+
+The report contains 7 tables covering: Transformation Risks, Physical Risks, Opportunities (Resource & Energy Efficiency, Products & Services), Metrics and Targets, Systemic Risk Control, and Operational Resilience.
+
+Please write a concise summary in English, approximately 250 words, that highlights the key climate risks, opportunities, and strategic recommendations for the {industry} industry based on the TCFD framework analysis."""
+                        summary = call_claude_api(summary_prompt, api_key_for_summary)
+                        summary = summary.split('\n\n')[0].strip()
+                        if len(summary.split()) > 300:
+                            words = summary.split()[:250]
+                            summary = ' '.join(words) + "..."
+                    except Exception as e:
+                        summary = f"This TCFD climate risk report provides a comprehensive analysis for the {industry} industry. The report includes 7 tables covering transformation risks, physical risks, opportunities, metrics and targets, systemic risk control, and operational resilience. Based on current carbon emission data (Total: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e) and revenue data ({revenue_str}), this report offers strategic insights for climate risk management and sustainable development."
+                else:
+                    summary = f"This TCFD climate risk report provides a comprehensive analysis for the {industry} industry. The report includes 7 tables covering transformation risks, physical risks, opportunities, metrics and targets, systemic risk control, and operational resilience. Based on current carbon emission data (Total: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e) and revenue data ({revenue_str}), this report offers strategic insights for climate risk management and sustainable development."
+            
+            # 步驟 2: 生成 PPTX
+            status_text.text("Step 2/3: Generating TCFD tables (this may take a few minutes)...")
+            progress_bar.progress(50)
+            
+            from pathlib import Path
+            template_path = Path(__file__).parent.parent / "shared" / "engine" / "tcfd" / "handdrawppt.pptx"
+            
+            output_file = generate_combined_pptx(
+                output_filename="TCFD_table.pptx",
+                template_path=template_path if template_path.exists() else None,
+                industry=industry,
+                revenue=revenue_str,
+                carbon_emission=carbon_emission,
+                llm_api_key=api_key if use_api else None,
+                llm_provider="anthropic" if use_api else None,
+                use_mock=not use_api
+            )
+            
+            # 步驟 3: 完成
+            status_text.text("Step 3/3: Finalizing report...")
+            progress_bar.progress(90)
+            
+            if not output_file or not output_file.exists():
+                error_detail = "生成 PPTX 失敗"
+                if output_file is None:
+                    error_detail += "：函數返回 None（請查看終端輸出中的詳細錯誤信息）"
+                elif not output_file.exists():
+                    error_detail += f"：文件不存在（預期路徑：{output_file}）"
+                raise Exception(error_detail)
+            
+            progress_bar.progress(100)
+            status_text.text("✅ Report generation completed!")
+            
+            # 保存到 session_state
+            st.session_state["tcfd_report_file"] = output_file
+            st.session_state["tcfd_report_summary"] = summary
+            st.session_state["tcfd_report_generated_tab2"] = True
+            
+            # 顯示成功訊息
+            st.success("✅ TCFD Report generated successfully!")
+            
+            # 顯示摘要
+            st.info(f"**Report Summary**：\n\n{summary}")
+            
+            # 顯示下載按鈕
+            with open(output_file, "rb") as f:
+                st.download_button(
+                    "📥 Download TCFD Report (TCFD_table.pptx)",
+                    data=f.read(),
+                    file_name="TCFD_table.pptx",
+                    mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                    use_container_width=True,
+                    key="download_tcfd_report_tab2"
+                )
+            
+        except Exception as e:
+            progress_bar.empty()
+            status_text.empty()
+            st.error(f"生成失敗：{str(e)}")
+            import traceback
+            st.code(traceback.format_exc())
+    
+    # 如果已經生成過報告，顯示摘要和下載按鈕
+    elif st.session_state.get("tcfd_report_file") and st.session_state.get("tcfd_report_file").exists():
+        st.success("✅ TCFD Report available!")
+        
+        # 顯示摘要
+        summary = st.session_state.get("tcfd_report_summary", "")
+        if summary:
+            st.info(f"**Report Summary**：\n\n{summary}")
+        
+        # 顯示下載按鈕
+        output_file = st.session_state.get("tcfd_report_file")
+        with open(output_file, "rb") as f:
+            st.download_button(
+                "📥 Download TCFD Report (TCFD_table.pptx)",
+                data=f.read(),
+                file_name="TCFD_table.pptx",
+                mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                use_container_width=True,
+                key="download_tcfd_report_tab2_existing"
+            )
 
 st.divider()
 
@@ -297,6 +385,10 @@ Please write a concise summary in English, approximately 250 words, that highlig
                 elif not output_file.exists():
                     error_detail += f"：文件不存在（預期路徑：{output_file}）"
                 raise Exception(error_detail)
+            
+            # 保存到 session_state（與 tab2 共享）
+            st.session_state["tcfd_report_file"] = output_file
+            st.session_state["tcfd_report_summary"] = summary
             
             st.success("✅ TCFD 報告生成完成！")
             
