@@ -97,108 +97,44 @@ Style: Technical, precise, detailed, and industry-specific. Use {INDUSTRY}-speci
 Constraint: Output PURE TEXT only. Do not use Markdown tables.
 Separator: Use "|||" to separate columns.
 Bullet points: Use ";" to separate multiple points within a cell.
-Detail Level: Provide comprehensive, detailed content. Include specific examples, quantifiable impacts, and actionable strategies relevant to {INDUSTRY} sector.
+Detail Level: Each field should be approximately 30 Chinese characters (適中長度，內容充實但簡潔). Provide MODERATE content: not too brief, not too extensive. Include key information: specific examples, quantifiable impacts, and actionable strategies relevant to {INDUSTRY} sector.
 """,
 
     # [Table 1] Transformation Risks - Focused on Policy & Regulation and Product & Tech
     'prompt_table_1_trans': """
-Task: Generate comprehensive, highly detailed content for 'Table 1: Transformation Risks' for {INDUSTRY} industry.
+Task: Generate content for 'Table 1: Transformation Risks' for {INDUSTRY} industry.
 
 FOCUS: This table focuses exclusively on TWO critical transformation risks:
 1. Policy & Regulation Risk
 2. Green Product & Technology Risk
 
-As an industry expert specializing in {INDUSTRY} sector, you MUST provide EXTENSIVE, DETAILED analysis for each risk category.
+As an industry expert specializing in {INDUSTRY} sector, provide MODERATE, CONCISE analysis for each risk category.
 
-Structure: Output exactly 2 lines. Each line MUST be comprehensive, detailed, and industry-specific (minimum 150-200 words per line).
+Structure: Output exactly 2 lines. Each line contains THREE fields separated by |||. Each field MUST be approximately 30 Chinese characters (適中長度，內容充實但簡潔).
 
-Line 1: Policy & Regulation Risk (Short/Medium Term) - MUST be EXTENSIVELY detailed
-As an industry expert, provide COMPREHENSIVE analysis including:
+Line 1: Policy & Regulation Risk (Short/Medium Term)
+Field 1 (Description - 約30字): 簡要說明影響{INDUSTRY}產業的主要政策法規風險，包括關鍵法規名稱和合規要求
+Field 2 (Financial Impact - 約30字): 量化財務影響，包括直接成本、間接成本和具體金額估算
+Field 3 (Adaptation - 約30字): 具體的應對策略和預算分配，包括行動計劃和時間表
 
-REGULATORY LANDSCAPE:
-- Identify SPECIFIC regulations, policies, laws, and compliance requirements currently affecting {INDUSTRY} sector
-- List actual or anticipated policy changes (e.g., sector-specific carbon pricing mechanisms, emission standards, product regulations, trade policies, environmental permits, industry-specific compliance frameworks)
-- Analyze regulatory trends and evolution in {INDUSTRY} sector
-- Include regional, national, and international regulations relevant to {INDUSTRY}
-
-COMPLIANCE ANALYSIS:
-- Detailed analysis of compliance deadlines, requirements, and enforcement mechanisms
-- Assessment of compliance costs and resource requirements
-- Evaluation of penalties, sanctions, or operational restrictions for non-compliance
-- Analysis of regulatory reporting and disclosure requirements
-
-FINANCIAL IMPACT:
-- Provide DETAILED financial impact analysis based on {INDUSTRY} operations, including:
-  * Direct costs (carbon taxes, compliance fees, permit costs)
-  * Indirect costs (operational changes, process modifications, staff training)
-  * Opportunity costs (restricted operations, delayed projects)
-  * Quantified impacts with specific amounts, percentages, and timeframes
-- Analyze impact on profit margins, operating costs, and cash flow
-- Include industry-specific cost structures and financial metrics
-
-STRATEGIC RESPONSE:
-- Specific, actionable strategies tailored to {INDUSTRY} sector
-- Detailed action plans with timelines and milestones
-- Budget breakdown with specific cost allocations
-- Risk mitigation measures and contingency plans
-
-Line 2: Green Product & Technology Risk (Short/Medium Term) - MUST be EXTENSIVELY detailed
-As an industry expert, provide COMPREHENSIVE analysis including:
-
-TECHNOLOGY DISRUPTION ANALYSIS:
-- Analyze technology disruptions and innovations in {INDUSTRY} sector:
-  * Green alternatives and sustainable technologies replacing traditional {INDUSTRY} processes
-  * Low-carbon processes, materials, and production methods
-  * Digitalization and automation trends affecting {INDUSTRY}
-  * Emerging technologies that could disrupt {INDUSTRY} business model
-- Include SPECIFIC technologies, processes, equipment, or innovations relevant to {INDUSTRY}
-- Analyze technology adoption rates and market penetration
-
-COMPETITIVE LANDSCAPE:
-- Detailed assessment of competitive landscape:
-  * How competitors are adopting green technologies
-  * Market leaders and innovators in {INDUSTRY} sustainability
-  * Competitive advantages/disadvantages from technology adoption
-  * Market positioning and differentiation strategies
-- Analyze competitive threats from technology-enabled new entrants
-
-BUSINESS MODEL IMPACT:
-- Evaluate impact of technology shifts on {INDUSTRY} business model:
-  * Changes to production processes and operational efficiency
-  * Impact on product/service offerings and value proposition
-  * Supply chain and distribution channel transformations
-  * Customer expectations and market demands
-- Analyze business model risks and opportunities
-
-FINANCIAL IMPACT:
-- Provide DETAILED financial impact analysis:
-  * R&D investment requirements for technology adoption
-  * Capital expenditure needs for new equipment/processes
-  * Revenue risks from technology obsolescence
-  * Cost savings or efficiency gains from new technologies
-  * Market share risks and competitive positioning costs
-- Quantify impacts with specific amounts, percentages, and ROI projections
-
-STRATEGIC RESPONSE:
-- Specific technology adoption strategies for {INDUSTRY} sector
-- Detailed R&D and innovation roadmaps
-- Technology partnership and collaboration plans
-- Budget breakdown with specific investment allocations
-- Risk mitigation and technology transition plans
+Line 2: Green Product & Technology Risk (Short/Medium Term)
+Field 1 (Description - 約30字): 簡要說明影響{INDUSTRY}產業的綠色產品和技術風險，包括關鍵技術變革和競爭威脅
+Field 2 (Financial Impact - 約30字): 量化財務影響，包括研發投資需求、設備更新成本和市場份額風險
+Field 3 (Adaptation - 約30字): 具體的技術採用策略和投資計劃，包括研發路線圖和合作夥伴計劃
 
 CRITICAL REQUIREMENTS:
-- Each line MUST contain EXTENSIVE, comprehensive content (minimum 150-200 words per line)
-- All analysis MUST be deeply {INDUSTRY}-specific, demonstrating expert knowledge
-- Include specific examples, regulations, technologies, processes, and market dynamics relevant to {INDUSTRY}
-- Provide detailed, quantifiable impacts with comprehensive financial analysis
-- Use {INDUSTRY}-specific terminology, technical details, and industry insights
-- Demonstrate deep understanding of {INDUSTRY} operations, challenges, and opportunities
+- Each field MUST be approximately 30 Chinese characters (適中長度，內容充實但簡潔)
+- Content should be MODERATE: not too brief (1-2 lines insufficient), not too extensive (avoid long paragraphs)
+- All analysis MUST be {INDUSTRY}-specific, demonstrating expert knowledge
+- Include key information: specific regulations/technologies, quantifiable impacts, actionable strategies
+- Use {INDUSTRY}-specific terminology and industry insights
+- Balance between detail and conciseness: provide sufficient information without overwhelming
 
-Format: Risk Description (EXTENSIVE, comprehensive, industry-specific, highly detailed) ||| Financial Impact (DETAILED quantification with specific amounts, percentages, timeframes, and multiple cost components) ||| Response Action & Budget (SPECIFIC, actionable strategies with detailed budget breakdown, timelines, and implementation plans)
+Format: Risk Description (約30字，適中長度) ||| Financial Impact (約30字，量化影響) ||| Response Action & Budget (約30字，具體策略)
 
 Example Output (for {INDUSTRY}):
-[EXTENSIVE policy analysis with specific regulations, compliance requirements, financial impacts, and detailed action plans] ||| [COMPREHENSIVE financial impact with multiple cost components, percentages, and timeframes] ||| [SPECIFIC action plan with detailed budget allocation, timelines, and implementation steps]
-[EXTENSIVE technology analysis with specific technologies, competitive landscape, business model impacts, and detailed adoption strategies] ||| [COMPREHENSIVE financial impact with R&D costs, revenue risks, and ROI projections] ||| [SPECIFIC technology adoption strategy with detailed budget, partnerships, and transition plans]
+歐盟建築能效指令要求2030年前提升能效30%，需投資低碳建材與節能技術 ||| 年度碳稅成本約8,099歐元，合規升級費用25-50萬歐元，預算增加10-15% ||| 建立合規路線圖，年度預算15-20萬歐元，員工培訓5-7.5萬歐元
+綠色建築技術與低碳材料成為競爭優勢，競爭對手採用可再生能源系統 ||| 設備淘汰風險100-200萬，研發投資150-300萬，市場份額流失風險200-400萬 ||| 加速綠色技術研發，建立技術合作夥伴關係，投資預算300-500萬
 """,
 
     # [Table 2] Physical Risks
