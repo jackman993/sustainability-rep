@@ -106,7 +106,7 @@ def call_claude_api(prompt: str, api_key: str, model: str = None) -> str:
 
 def parse_llm_response(response: str) -> List[str]:
     """
-    解析 LLM 返回的內容，提取表格行數據
+    解析 LLM 返回的內容，提取表格行數據（優化版本，強制 ||| 格式）
     
     Args:
         response: LLM 返回的文本
@@ -115,11 +115,14 @@ def parse_llm_response(response: str) -> List[str]:
         表格內容列表（每行是 ||| 分隔的字符串）
     """
     lines = []
-    # 尋找包含 ||| 分隔符的行
+    # 尋找包含 ||| 分隔符的行（優先）
     for line in response.split('\n'):
         line = line.strip()
         if '|||' in line:
-            lines.append(line)
+            # 清理可能的編號前綴（如 "Line 1:", "1.", 等）
+            cleaned = re.sub(r'^(Line\s*\d+[:.]?\s*|^\d+[.:]\s*)', '', line, flags=re.IGNORECASE)
+            if cleaned.strip():
+                lines.append(cleaned.strip())
     
     # 如果沒有找到 ||| 分隔的行，嘗試其他格式
     if not lines:
@@ -132,11 +135,17 @@ def parse_llm_response(response: str) -> List[str]:
                 if cleaned:
                     lines.append(cleaned)
     
-    # 如果還是沒有，返回原始響應的第一部分
+    # 如果還是沒有，返回原始響應的第一部分（添加 ||| 分隔符）
     if not lines:
-        lines = [response[:200] + " ||| N/A ||| N/A"]
+        # 嘗試從原始響應中提取前200字符，並添加分隔符
+        first_part = response[:200].strip()
+        if first_part:
+            lines.append(first_part + " ||| N/A ||| N/A")
+        else:
+            lines.append("N/A ||| N/A ||| N/A")
     
-    return lines[:10]  # 最多返回 10 行
+    # 返回最多 10 行（通常只需要 2 行）
+    return lines[:10]
 
 
 def generate_mock_data(prompt_id: str, industry: str = None, carbon_emission: Dict[str, Any] = None) -> List[str]:
@@ -408,6 +417,13 @@ def generate_combined_pptx(
             else:
                 prs = Presentation()
         
+        # 刪除模板中的所有預設 slide（避免空白頁）
+        # 因為我們要一次輸出7頁，不需要模板的預設頁面
+        while len(prs.slides) > 0:
+            rId = prs.slides._sldIdLst[0].rId
+            prs.part.drop_rel(rId)
+            del prs.slides._sldIdLst[0]
+        
         # 按順序生成每個表格
         slide_order = ['page_1', 'page_2', 'page_3', 'page_4', 'page_5', 'page_6', 'page_7']
         
@@ -437,31 +453,33 @@ def generate_combined_pptx(
                 use_mock=use_mock
             )
             
+            # 統一處理：如果函數接受 prs 參數，直接傳入；否則使用臨時文件
             if has_prs_param:
-                # table0607: 接受 prs 參數，直接添加到主 PPTX
+                # 函數接受 prs 參數，直接添加到主 PPTX（一次輸出，不用 add_slide）
                 # 檢查是否還需要 data_lines 參數
                 if 'data_lines' in sig.parameters:
-                    func(prs, data_lines)
+                    func(prs=prs, data_lines=data_lines)
                 else:
-                    func(prs)
+                    func(prs=prs)
             else:
-                # table01-05: 創建臨時文件，然後複製 slide
+                # 函數不接受 prs 參數，使用臨時文件（向後兼容）
                 with tempfile.NamedTemporaryFile(suffix='.pptx', delete=False) as tmp:
                     temp_file = Path(tmp.name)
                 
                 try:
                     # 生成臨時文件
-                    func(data_lines, filename=str(temp_file))
+                    func(data_lines=data_lines, filename=str(temp_file))
                     
-                    # 複製 slide 到主 PPTX
+                    # 讀取臨時文件的 slide，直接移動到主 PPTX
                     temp_prs = Presentation(str(temp_file))
+                    
+                    # 直接移動 slide 的 XML 元素到主 prs（一次輸出，不用 add_slide）
+                    import copy
                     for slide in temp_prs.slides:
-                        # 使用空白 layout 創建新 slide
-                        new_slide = prs.slides.add_slide(prs.slide_layouts[6])
-                        # 複製所有形狀
-                        for shape in slide.shapes:
-                            # 複製形狀的 XML
-                            new_shape = new_slide.shapes._spTree.add_child(shape._element)
+                        # 深拷貝 slide 的 XML 元素
+                        slide_element = copy.deepcopy(slide._element)
+                        # 添加到主 prs 的 slide ID 列表
+                        prs.slides._sldIdLst.append(slide_element)
                 finally:
                     # 刪除臨時文件
                     if temp_file.exists():
@@ -471,6 +489,19 @@ def generate_combined_pptx(
         output_dir = config.OUTPUT_DIR
         output_dir.mkdir(exist_ok=True)
         output_path = output_dir / output_filename
+        
+        # 如果文件已存在且被鎖定，使用帶時間戳的文件名
+        if output_path.exists():
+            try:
+                # 嘗試刪除舊文件
+                output_path.unlink()
+            except PermissionError:
+                # 如果無法刪除（文件被鎖定），使用帶時間戳的新文件名
+                from datetime import datetime
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                name_parts = output_path.stem, timestamp, output_path.suffix
+                output_path = output_dir / f"{name_parts[0]}_{name_parts[1]}{name_parts[2]}"
+        
         prs.save(str(output_path))
         
         return output_path

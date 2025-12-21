@@ -58,8 +58,20 @@ COLOR_BG_STRIPE = 'F7F7F7'
 COLOR_TEXT_SUB = '333333'
 
 # ================= 📝 Table 6: Systemic Risk Control (原 Governance) =================
-def create_slide_6_risk_control(prs):
-    slide = prs.slides.add_slide(prs.slide_layouts[6])
+def create_slide_6_risk_control(prs, data_lines=None):
+    # 動態查找空白 layout
+    blank_layout = None
+    for i, layout in enumerate(prs.slide_layouts):
+        layout_name_lower = layout.name.lower()
+        if 'blank' in layout_name_lower or 'empty' in layout_name_lower:
+            blank_layout = layout
+            break
+    if blank_layout is None and len(prs.slide_layouts) > 6:
+        blank_layout = prs.slide_layouts[6]
+    elif blank_layout is None:
+        blank_layout = prs.slide_layouts[-1]
+    
+    slide = prs.slides.add_slide(blank_layout)
     table = init_zebra_table(slide)
 
     # 1. 主標題 (完全移除 Governance 字眼)
@@ -89,11 +101,42 @@ def create_slide_6_risk_control(prs):
         set_text(table.cell(3, c), "", 9)
         table.cell(3, c).vertical_anchor = MSO_ANCHOR.TOP
     for c in range(0, 6): set_cell_bg(table.cell(3, c), COLOR_BG_STRIPE)
+    
+    # 填充 LLM 返回的數據（列 3-5: Mitigation Protocol, Liability Avoidance, Budget）
+    if data_lines:
+        data_rows = [2, 3]
+        for idx, data_line in enumerate(data_lines[:2]):
+            if idx >= len(data_rows):
+                break
+            row_idx = data_rows[idx]
+            parts = [p.strip() for p in data_line.split('|||')]
+            # table06 的列：3=Mitigation Protocol, 4=Liability Avoidance, 5=Budget
+            if len(parts) >= 1 and parts[0]:
+                desc_parts = parts[0].split(';', 1)
+                mitigation = desc_parts[1].strip() if len(desc_parts) > 1 else desc_parts[0].strip()
+                if mitigation:
+                    set_text(table.cell(row_idx, 3), mitigation, 9)
+            if len(parts) >= 2 and parts[1]:
+                set_text(table.cell(row_idx, 4), parts[1].strip(), 9)  # Liability Avoidance
+            if len(parts) >= 3 and parts[2]:
+                set_text(table.cell(row_idx, 5), parts[2].strip(), 9)  # Budget
 
 
 # ================= 📝 Table 7: Operational Resilience (原 Social) =================
-def create_slide_7_resilience(prs):
-    slide = prs.slides.add_slide(prs.slide_layouts[6])
+def create_slide_7_resilience(prs, data_lines=None):
+    # 動態查找空白 layout
+    blank_layout = None
+    for i, layout in enumerate(prs.slide_layouts):
+        layout_name_lower = layout.name.lower()
+        if 'blank' in layout_name_lower or 'empty' in layout_name_lower:
+            blank_layout = layout
+            break
+    if blank_layout is None and len(prs.slide_layouts) > 6:
+        blank_layout = prs.slide_layouts[6]
+    elif blank_layout is None:
+        blank_layout = prs.slide_layouts[-1]
+    
+    slide = prs.slides.add_slide(blank_layout)
     table = init_zebra_table(slide)
 
     # 1. 主標題 (完全移除 Social 字眼，使用 IPCC 術語)
@@ -122,23 +165,52 @@ def create_slide_7_resilience(prs):
         set_text(table.cell(3, c), "", 9)
         table.cell(3, c).vertical_anchor = MSO_ANCHOR.TOP
     for c in range(0, 6): set_cell_bg(table.cell(3, c), COLOR_BG_STRIPE)
+    
+    # 填充 LLM 返回的數據（列 3-5: Adaptation Strategy, Continuity Benefit, Budget）
+    if data_lines:
+        data_rows = [2, 3]
+        for idx, data_line in enumerate(data_lines[:2]):
+            if idx >= len(data_rows):
+                break
+            row_idx = data_rows[idx]
+            parts = [p.strip() for p in data_line.split('|||')]
+            # table07 的列：3=Adaptation Strategy, 4=Continuity Benefit, 5=Budget
+            if len(parts) >= 1 and parts[0]:
+                desc_parts = parts[0].split(';', 1)
+                adaptation = desc_parts[1].strip() if len(desc_parts) > 1 else desc_parts[0].strip()
+                if adaptation:
+                    set_text(table.cell(row_idx, 3), adaptation, 9)
+            if len(parts) >= 2 and parts[1]:
+                set_text(table.cell(row_idx, 4), parts[1].strip(), 9)  # Continuity Benefit
+            if len(parts) >= 3 and parts[2]:
+                set_text(table.cell(row_idx, 5), parts[2].strip(), 9)  # Budget
 
 
-def generate_table_06(data_lines=None, filename=None):
-    if filename is None:
-        filename = 'TCFD_table06_systemic_risk.pptx'
-    prs = Presentation()
-    create_slide_6_risk_control(prs)
-    prs.save(filename)
-    return filename
+def generate_table_06(data_lines=None, filename=None, prs=None):
+    # 如果提供了 prs，直接添加到主 prs；否則創建獨立文件（向後兼容）
+    if prs is not None:
+        create_slide_6_risk_control(prs, data_lines=data_lines)
+        return None  # 已添加到主 prs，不需要返回文件名
+    else:
+        if filename is None:
+            filename = 'TCFD_table06_systemic_risk.pptx'
+        prs = Presentation()
+        create_slide_6_risk_control(prs, data_lines=data_lines)
+        prs.save(filename)
+        return filename
 
-def generate_table_07(data_lines=None, filename=None):
-    if filename is None:
-        filename = 'TCFD_table07_operational_resilience.pptx'
-    prs = Presentation()
-    create_slide_7_resilience(prs)
-    prs.save(filename)
-    return filename
+def generate_table_07(data_lines=None, filename=None, prs=None):
+    # 如果提供了 prs，直接添加到主 prs；否則創建獨立文件（向後兼容）
+    if prs is not None:
+        create_slide_7_resilience(prs, data_lines=data_lines)
+        return None  # 已添加到主 prs，不需要返回文件名
+    else:
+        if filename is None:
+            filename = 'TCFD_table07_operational_resilience.pptx'
+        prs = Presentation()
+        create_slide_7_resilience(prs, data_lines=data_lines)
+        prs.save(filename)
+        return filename
 
 if __name__ == "__main__":
     prs = Presentation()

@@ -61,9 +61,27 @@ COLOR_BG_STRIPE = 'F7F7F7'
 COLOR_TEXT_SUB = '333333'
 
 # ================= 📝 Table 5: Metrics & Targets 生成邏輯 =================
-def create_slide_5_metrics(output_filename):
-    prs = Presentation()
-    slide = prs.slides.add_slide(prs.slide_layouts[6])
+def create_slide_5_metrics(prs=None, output_filename=None, data_lines=None):
+    # 如果提供了 prs，直接使用；否則創建新的（向後兼容）
+    if prs is None:
+        prs = Presentation()
+        output_mode = True
+    else:
+        output_mode = False
+    
+    # 動態查找空白 layout
+    blank_layout = None
+    for i, layout in enumerate(prs.slide_layouts):
+        layout_name_lower = layout.name.lower()
+        if 'blank' in layout_name_lower or 'empty' in layout_name_lower:
+            blank_layout = layout
+            break
+    if blank_layout is None and len(prs.slide_layouts) > 6:
+        blank_layout = prs.slide_layouts[6]
+    elif blank_layout is None:
+        blank_layout = prs.slide_layouts[-1]
+    
+    slide = prs.slides.add_slide(blank_layout)
     table = init_zebra_table(slide)
 
     # 1. 主標題
@@ -113,16 +131,42 @@ def create_slide_5_metrics(output_filename):
 
     # 設為灰底
     for c in range(0, 6): set_cell_bg(table.cell(3, c), COLOR_BG_STRIPE)
+    
+    # 填充 LLM 返回的數據
+    if data_lines:
+        data_rows = [2, 3]
+        for idx, data_line in enumerate(data_lines[:2]):
+            if idx >= len(data_rows):
+                break
+            row_idx = data_rows[idx]
+            parts = [p.strip() for p in data_line.split('|||')]
+            description = ""
+            if len(parts) >= 1 and parts[0]:
+                desc_parts = parts[0].split(';', 1)
+                description = desc_parts[1].strip() if len(desc_parts) > 1 else desc_parts[0].strip()
+            if description:
+                set_text(table.cell(row_idx, 3), description, 9)
+            if len(parts) >= 2 and parts[1]:
+                set_text(table.cell(row_idx, 4), parts[1].strip(), 9)
+            if len(parts) >= 3 and parts[2]:
+                set_text(table.cell(row_idx, 5), parts[2].strip(), 9)
 
-    # 存檔
-    prs.save(output_filename)
-    print(f"✅ Table 5 (Metrics & Targets) 生成完成: {output_filename}")
+    # 只有在獨立模式下才保存
+    # 只有在獨立模式下才保存
+    if output_mode and output_filename:
+        prs.save(output_filename)
+        print(f"✅ Table 5 (Metrics & Targets) 生成完成: {output_filename}")
 
-def generate_table_05(data_lines=None, filename=None):
-    if filename is None:
-        filename = 'TCFD_table05_metrics_targets.pptx'
-    create_slide_5_metrics(filename)
-    return filename
+def generate_table_05(data_lines=None, filename=None, prs=None):
+    # 如果提供了 prs，直接添加到主 prs；否則創建獨立文件（向後兼容）
+    if prs is not None:
+        create_slide_5_metrics(prs=prs, data_lines=data_lines)
+        return None  # 已添加到主 prs，不需要返回文件名
+    else:
+        if filename is None:
+            filename = 'TCFD_table05_metrics_targets.pptx'
+        create_slide_5_metrics(output_filename=filename, data_lines=data_lines)
+        return filename
 
 if __name__ == "__main__":
     create_slide_5_metrics("tcfd_table_5_metrics.pptx")

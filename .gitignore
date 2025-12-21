@@ -1,0 +1,25 @@
+﻿# PowerPoint temporary files
+~$*.pptx
+~$*.ppt
+~$*.docx
+~$*.doc
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Output files (if needed, uncomment to exclude all output)
+# shared/engine/tcfd/output/*.pptx
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
