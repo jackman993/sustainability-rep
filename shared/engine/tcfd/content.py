@@ -100,62 +100,105 @@ Bullet points: Use ";" to separate multiple points within a cell.
 Detail Level: Provide comprehensive, detailed content. Include specific examples, quantifiable impacts, and actionable strategies relevant to {INDUSTRY} sector.
 """,
 
-    # [Table 1] Transformation Risks
+    # [Table 1] Transformation Risks - Focused on Policy & Regulation and Product & Tech
     'prompt_table_1_trans': """
-Task: Generate comprehensive, detailed content for 'Table 1: Transformation Risks' for {INDUSTRY} industry.
+Task: Generate comprehensive, highly detailed content for 'Table 1: Transformation Risks' for {INDUSTRY} industry.
 
-As an industry expert, you MUST provide:
-- Industry-specific regulations, policies, and compliance requirements affecting {INDUSTRY}
-- Detailed market analysis including trends, competitive dynamics, customer behavior, and market shifts in {INDUSTRY} sector
-- Technology disruptions and innovations specific to {INDUSTRY}
-- Quantified financial impacts based on {INDUSTRY} operational characteristics and business model
+FOCUS: This table focuses exclusively on TWO critical transformation risks:
+1. Policy & Regulation Risk
+2. Green Product & Technology Risk
+
+As an industry expert specializing in {INDUSTRY} sector, you MUST provide EXTENSIVE, DETAILED analysis for each risk category.
+
+Structure: Output exactly 2 lines. Each line MUST be comprehensive, detailed, and industry-specific (minimum 150-200 words per line).
+
+Line 1: Policy & Regulation Risk (Short/Medium Term) - MUST be EXTENSIVELY detailed
+As an industry expert, provide COMPREHENSIVE analysis including:
+
+REGULATORY LANDSCAPE:
+- Identify SPECIFIC regulations, policies, laws, and compliance requirements currently affecting {INDUSTRY} sector
+- List actual or anticipated policy changes (e.g., sector-specific carbon pricing mechanisms, emission standards, product regulations, trade policies, environmental permits, industry-specific compliance frameworks)
+- Analyze regulatory trends and evolution in {INDUSTRY} sector
+- Include regional, national, and international regulations relevant to {INDUSTRY}
+
+COMPLIANCE ANALYSIS:
+- Detailed analysis of compliance deadlines, requirements, and enforcement mechanisms
+- Assessment of compliance costs and resource requirements
+- Evaluation of penalties, sanctions, or operational restrictions for non-compliance
+- Analysis of regulatory reporting and disclosure requirements
+
+FINANCIAL IMPACT:
+- Provide DETAILED financial impact analysis based on {INDUSTRY} operations, including:
+  * Direct costs (carbon taxes, compliance fees, permit costs)
+  * Indirect costs (operational changes, process modifications, staff training)
+  * Opportunity costs (restricted operations, delayed projects)
+  * Quantified impacts with specific amounts, percentages, and timeframes
+- Analyze impact on profit margins, operating costs, and cash flow
+- Include industry-specific cost structures and financial metrics
+
+STRATEGIC RESPONSE:
 - Specific, actionable strategies tailored to {INDUSTRY} sector
+- Detailed action plans with timelines and milestones
+- Budget breakdown with specific cost allocations
+- Risk mitigation measures and contingency plans
 
-Structure: Output exactly 4 lines to match the table structure. Each line MUST be comprehensive and detailed.
+Line 2: Green Product & Technology Risk (Short/Medium Term) - MUST be EXTENSIVELY detailed
+As an industry expert, provide COMPREHENSIVE analysis including:
 
-Line 1: Policy & Regulation Risk (Short/Medium Term)
-- Identify SPECIFIC regulations, policies, or compliance requirements affecting {INDUSTRY} sector
-- Include actual or anticipated policy changes (e.g., sector-specific carbon pricing, emission standards, product regulations, trade policies)
-- Analyze compliance deadlines, requirements, and enforcement mechanisms
-- Provide detailed financial impact analysis based on {INDUSTRY} operations
+TECHNOLOGY DISRUPTION ANALYSIS:
+- Analyze technology disruptions and innovations in {INDUSTRY} sector:
+  * Green alternatives and sustainable technologies replacing traditional {INDUSTRY} processes
+  * Low-carbon processes, materials, and production methods
+  * Digitalization and automation trends affecting {INDUSTRY}
+  * Emerging technologies that could disrupt {INDUSTRY} business model
+- Include SPECIFIC technologies, processes, equipment, or innovations relevant to {INDUSTRY}
+- Analyze technology adoption rates and market penetration
 
-Line 2: Green Product & Technology Risk (Short/Medium Term)
-- Analyze technology disruptions and innovations in {INDUSTRY} (e.g., green alternatives, low-carbon processes, sustainable materials)
-- Assess competitive landscape and how competitors are adopting green technologies
-- Evaluate impact of technology shifts on {INDUSTRY} business model and operations
-- Include specific technologies, processes, or innovations relevant to {INDUSTRY}
+COMPETITIVE LANDSCAPE:
+- Detailed assessment of competitive landscape:
+  * How competitors are adopting green technologies
+  * Market leaders and innovators in {INDUSTRY} sustainability
+  * Competitive advantages/disadvantages from technology adoption
+  * Market positioning and differentiation strategies
+- Analyze competitive threats from technology-enabled new entrants
 
-Line 3: Market Disruption Risk (Medium Term) - CRITICAL: This MUST be comprehensive
-- Provide DETAILED market analysis including:
-  * Current market trends and shifts in {INDUSTRY} sector
-  * Competitive dynamics and market positioning
-  * Customer/client behavior changes and preferences
-  * Supply chain transformations affecting {INDUSTRY}
-  * Market entry barriers and opportunities
-  * Industry consolidation or fragmentation trends
-- Quantify market risks with specific metrics (market share, revenue, customer segments)
-- Include analysis of how {INDUSTRY} market is evolving
+BUSINESS MODEL IMPACT:
+- Evaluate impact of technology shifts on {INDUSTRY} business model:
+  * Changes to production processes and operational efficiency
+  * Impact on product/service offerings and value proposition
+  * Supply chain and distribution channel transformations
+  * Customer expectations and market demands
+- Analyze business model risks and opportunities
 
-Line 4: Reputation & Brand Risk (Long Term)
-- Analyze ESG reputation risks specific to {INDUSTRY} sector
-- Assess stakeholder expectations (investors, customers, regulators, communities)
-- Evaluate brand value risks and public perception challenges
-- Include industry-specific reputation factors and ESG rating impacts
+FINANCIAL IMPACT:
+- Provide DETAILED financial impact analysis:
+  * R&D investment requirements for technology adoption
+  * Capital expenditure needs for new equipment/processes
+  * Revenue risks from technology obsolescence
+  * Cost savings or efficiency gains from new technologies
+  * Market share risks and competitive positioning costs
+- Quantify impacts with specific amounts, percentages, and ROI projections
+
+STRATEGIC RESPONSE:
+- Specific technology adoption strategies for {INDUSTRY} sector
+- Detailed R&D and innovation roadmaps
+- Technology partnership and collaboration plans
+- Budget breakdown with specific investment allocations
+- Risk mitigation and technology transition plans
 
 CRITICAL REQUIREMENTS:
-- Each line MUST contain comprehensive, detailed content (minimum 100-150 words per line)
-- Market analysis (Line 3) MUST NOT be blank and MUST include extensive market insights
-- All analysis MUST be {INDUSTRY}-specific, not generic
-- Include specific examples, regulations, technologies, or market dynamics relevant to {INDUSTRY}
-- Provide quantifiable impacts with detailed financial analysis
+- Each line MUST contain EXTENSIVE, comprehensive content (minimum 150-200 words per line)
+- All analysis MUST be deeply {INDUSTRY}-specific, demonstrating expert knowledge
+- Include specific examples, regulations, technologies, processes, and market dynamics relevant to {INDUSTRY}
+- Provide detailed, quantifiable impacts with comprehensive financial analysis
+- Use {INDUSTRY}-specific terminology, technical details, and industry insights
+- Demonstrate deep understanding of {INDUSTRY} operations, challenges, and opportunities
 
-Format: Risk Description (comprehensive, industry-specific, detailed) ||| Financial Impact (detailed quantification with specific amounts and percentages) ||| Response Action & Budget (specific, actionable strategies with detailed budget breakdown)
+Format: Risk Description (EXTENSIVE, comprehensive, industry-specific, highly detailed) ||| Financial Impact (DETAILED quantification with specific amounts, percentages, timeframes, and multiple cost components) ||| Response Action & Budget (SPECIFIC, actionable strategies with detailed budget breakdown, timelines, and implementation plans)
 
 Example Output (for {INDUSTRY}):
-[Detailed policy analysis with specific regulations] ||| [Comprehensive financial impact with multiple cost components] ||| [Specific action plan with detailed budget allocation]
-[Detailed technology analysis] ||| [Comprehensive financial impact] ||| [Specific technology adoption strategy with budget]
-[EXTENSIVE market analysis with trends, competition, customers] ||| [Comprehensive market impact quantification] ||| [Detailed market strategy with budget]
-[Detailed reputation analysis] ||| [Comprehensive brand value impact] ||| [Specific reputation management strategy with budget]
+[EXTENSIVE policy analysis with specific regulations, compliance requirements, financial impacts, and detailed action plans] ||| [COMPREHENSIVE financial impact with multiple cost components, percentages, and timeframes] ||| [SPECIFIC action plan with detailed budget allocation, timelines, and implementation steps]
+[EXTENSIVE technology analysis with specific technologies, competitive landscape, business model impacts, and detailed adoption strategies] ||| [COMPREHENSIVE financial impact with R&D costs, revenue risks, and ROI projections] ||| [SPECIFIC technology adoption strategy with detailed budget, partnerships, and transition plans]
 """,
 
     # [Table 2] Physical Risks
