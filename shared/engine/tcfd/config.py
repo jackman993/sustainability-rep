@@ -10,7 +10,10 @@ from pathlib import Path
 # ==================================================
 BASE_DIR = Path(__file__).parent
 TABLES_DIR = BASE_DIR / "tables"
-OUTPUT_DIR = BASE_DIR / "output"
+# OUTPUT_DIR 改為指向項目根目錄下的 output/{session_id}/
+# 從 config.py 向上四級到項目根目錄：shared/engine/tcfd/config.py -> 項目根目錄
+PROJECT_ROOT = BASE_DIR.parent.parent.parent
+OUTPUT_DIR = PROJECT_ROOT / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 # ==================================================

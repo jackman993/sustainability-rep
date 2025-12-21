@@ -509,9 +509,7 @@ def generate_combined_pptx(
                 # 重新拋出錯誤，讓外層處理
                 raise Exception(error_msg) from table_error
         
-        # 保存文件 - 直接使用 output_config 中定義的路徑（與舊方案使用 config.OUTPUT_DIR 相同）
-        from ..output_config import OUTPUT_ROOT
-        
+        # 保存文件 - 使用 config.OUTPUT_DIR（已修改為指向項目根目錄的 output）
         # 獲取 session_id
         import streamlit as st
         import uuid
@@ -519,8 +517,8 @@ def generate_combined_pptx(
         if 'session_id' not in st.session_state:
             st.session_state['session_id'] = session_id
         
-        # 構建輸出路徑
-        session_dir = OUTPUT_ROOT / session_id
+        # 構建輸出路徑（使用 config.OUTPUT_DIR，現在指向項目根目錄的 output）
+        session_dir = config.OUTPUT_DIR / session_id
         session_dir.mkdir(parents=True, exist_ok=True)
         output_path = session_dir / output_filename
         
