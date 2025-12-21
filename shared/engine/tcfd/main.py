@@ -516,29 +516,89 @@ def generate_combined_pptx(
         
         # 保存文件 - 使用統一的路徑管理器
         import streamlit as st
+        
         # 使用統一的 path_manager 獲取輸出路徑（包含 session_id）
-        output_path = get_tcfd_output_path()
+        try:
+            output_path = get_tcfd_output_path()
+        except Exception as path_error:
+            error_msg = f"Failed to get output path: {str(path_error)}"
+            print(error_msg)
+            import traceback
+            traceback.print_exc()
+            # 嘗試在 Streamlit 中顯示錯誤（如果可用）
+            try:
+                st.error(f"路徑獲取失敗: {str(path_error)}")
+                st.code(traceback.format_exc())
+            except:
+                pass
+            raise Exception(error_msg) from path_error
+        
         # 確保目錄存在
-        output_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+        except Exception as dir_error:
+            error_msg = f"Failed to create output directory: {str(dir_error)}"
+            print(error_msg)
+            import traceback
+            traceback.print_exc()
+            try:
+                st.error(f"目錄創建失敗: {str(dir_error)}")
+                st.code(traceback.format_exc())
+            except:
+                pass
+            raise Exception(error_msg) from dir_error
+        
         # 保存文件
-        prs.save(str(output_path))
+        try:
+            prs.save(str(output_path))
+        except Exception as save_error:
+            error_msg = f"Failed to save PPTX file: {str(save_error)}"
+            print(error_msg)
+            import traceback
+            traceback.print_exc()
+            try:
+                st.error(f"文件保存失敗: {str(save_error)}")
+                st.code(traceback.format_exc())
+            except:
+                pass
+            raise Exception(error_msg) from save_error
+        
         # 更新會話活動時間（用於會話清理）
-        update_session_activity()
+        try:
+            update_session_activity()
+        except Exception as activity_error:
+            # 更新活動時間失敗不影響主流程，只記錄警告
+            print(f"Warning: Failed to update session activity: {str(activity_error)}")
+        
         # 保存路徑到 session_state（供其他模組讀取）
-        st.session_state["tcfd_report_file"] = str(output_path)
+        try:
+            st.session_state["tcfd_report_file"] = str(output_path)
+        except Exception as state_error:
+            # session_state 保存失敗不影響主流程，只記錄警告
+            print(f"Warning: Failed to save path to session_state: {str(state_error)}")
+        
         return output_path
         
     except Exception as e:
         error_msg = f"Error generating combined PPTX: {str(e)}"
         print(error_msg)
         import traceback
+        full_traceback = traceback.format_exc()
         print("=" * 60)
         print("Full traceback:")
-        traceback.print_exc()
+        print(full_traceback)
         print("=" * 60)
         # 將錯誤信息也記錄到 stderr，確保 Streamlit 能看到
         import sys
         sys.stderr.write(error_msg + "\n")
-        traceback.print_exc(file=sys.stderr)
+        sys.stderr.write(full_traceback + "\n")
+        # 嘗試在 Streamlit 中顯示錯誤（如果可用）
+        try:
+            import streamlit as st
+            st.error(f"生成 TCFD 報告失敗: {str(e)}")
+            with st.expander("詳細錯誤信息", expanded=False):
+                st.code(full_traceback)
+        except:
+            pass
         return None
 
