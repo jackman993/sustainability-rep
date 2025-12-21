@@ -205,16 +205,31 @@ Please write a concise summary in English, approximately 250 words, that highlig
             except:
                 debug_info.text("📋 Session ID: 無法獲取")
             
-            output_file = generate_combined_pptx(
-                output_filename="TCFD_table.pptx",
-                template_path=template_path if template_path.exists() else None,
-                industry=industry,
-                revenue=revenue_str,
-                carbon_emission=carbon_emission,
-                llm_api_key=api_key if use_api else None,
-                llm_provider="anthropic" if use_api else None,
-                use_mock=not use_api
-            )
+            # 創建錯誤顯示容器（確保錯誤一定會顯示）
+            error_container = st.container()
+            
+            try:
+                output_file = generate_combined_pptx(
+                    output_filename="TCFD_table.pptx",
+                    template_path=template_path if template_path.exists() else None,
+                    industry=industry,
+                    revenue=revenue_str,
+                    carbon_emission=carbon_emission,
+                    llm_api_key=api_key if use_api else None,
+                    llm_provider="anthropic" if use_api else None,
+                    use_mock=not use_api
+                )
+            except Exception as gen_error:
+                # 捕獲生成過程中的異常
+                error_container.error(f"❌ TCFD 報告生成過程發生錯誤: {str(gen_error)}")
+                with error_container.expander("🔍 詳細錯誤信息", expanded=True):
+                    import traceback
+                    error_container.code(traceback.format_exc())
+                error_container.info("💡 請同時查看終端輸出中的詳細日誌")
+                progress_bar.empty()
+                status_text.empty()
+                debug_info.empty()
+                st.stop()
             
             # 步驟 3: 完成
             status_text.text("Step 3/3: Finalizing report...")
@@ -224,10 +239,12 @@ Please write a concise summary in English, approximately 250 words, that highlig
             debug_info.empty()  # 清除調試信息
             
             if output_file is None:
-                error_detail = "❌ 生成 PPTX 失敗：函數返回 None"
-                st.error(error_detail)
-                st.info("💡 請查看下方的詳細錯誤信息和終端輸出")
-                raise Exception(error_detail)
+                error_container.error("❌ 生成 PPTX 失敗：函數返回 None")
+                error_container.info("💡 這通常意味著生成過程中發生了異常，但被內部處理了")
+                error_container.info("💡 請查看終端輸出中的 [ERROR] 和 [DEBUG] 日誌")
+                progress_bar.empty()
+                status_text.empty()
+                st.stop()
             
             if not hasattr(output_file, 'exists'):
                 error_detail = f"❌ 返回的路徑對象無效：{type(output_file)}"

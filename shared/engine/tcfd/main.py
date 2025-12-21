@@ -617,7 +617,7 @@ def generate_combined_pptx(
         return output_path
         
     except Exception as e:
-        error_msg = f"Error generating combined PPTX: {str(e)}"
+        error_msg = f"[ERROR] Error generating combined PPTX: {str(e)}"
         print(error_msg)
         import traceback
         full_traceback = traceback.format_exc()
@@ -629,13 +629,12 @@ def generate_combined_pptx(
         import sys
         sys.stderr.write(error_msg + "\n")
         sys.stderr.write(full_traceback + "\n")
-        # 嘗試在 Streamlit 中顯示錯誤（如果可用）
-        try:
-            import streamlit as st
-            st.error(f"生成 TCFD 報告失敗: {str(e)}")
-            with st.expander("詳細錯誤信息", expanded=False):
-                st.code(full_traceback)
-        except:
-            pass
-        return None
+        
+        # 強制在 Streamlit 中顯示錯誤（如果可用）
+        # 注意：這裡的 st 可能不在正確的上下文中，所以讓上層處理
+        # 但我們確保錯誤信息被完整記錄
+        print("[ERROR] ========== 錯誤已記錄，請查看 UI 中的錯誤顯示 ==========")
+        
+        # 重新拋出異常，讓上層捕獲並顯示
+        raise Exception(f"生成 TCFD 報告失敗: {str(e)}\n\n詳細信息請查看終端輸出") from e
 
