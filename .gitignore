@@ -11,8 +11,10 @@ __pycache__/
 *.so
 .Python
 
-# Output files (if needed, uncomment to exclude all output)
-# shared/engine/tcfd/output/*.pptx
+# Output files - 排除 output 目錄（會話文件）
+output/
+*.pptx
+!templates/*.pptx
 
 # IDE
 .vscode/
