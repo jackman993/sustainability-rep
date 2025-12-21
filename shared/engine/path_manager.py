@@ -25,6 +25,11 @@ def get_tcfd_report_path() -> Path | None:
     
     return None
 
+def get_tcfd_output_path() -> Path:
+    """獲取 TCFD 報告輸出路徑（兩層結構：output/{session_id}/TCFD_table.pptx）"""
+    session_dir = get_step_output_dir('tcfd')  # 現在直接返回會話目錄
+    return session_dir / OUTPUT_FILENAMES['tcfd']
+
 def get_environment_output_path() -> Path:
     """獲取 Environment 報告輸出路徑（兩層結構：output/{session_id}/Environment_report.pptx）"""
     session_dir = get_step_output_dir('environment')  # 現在直接返回會話目錄

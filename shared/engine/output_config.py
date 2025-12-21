@@ -19,9 +19,22 @@ from pathlib import Path
 import uuid
 import streamlit as st
 
+def _get_project_root() -> Path:
+    """獲取項目根目錄（包含 app.py 的目錄）"""
+    # 從當前文件位置向上查找，直到找到包含 app.py 的目錄
+    current = Path(__file__).resolve()
+    # 當前文件在 shared/engine/output_config.py，向上兩級到項目根目錄
+    # 路徑結構：項目根目錄/shared/engine/output_config.py
+    # 所以向上兩級：current.parent.parent 就是項目根目錄
+    for parent in [current.parent.parent, current.parent.parent.parent]:
+        if (parent / "app.py").exists():
+            return parent
+    # 如果找不到，假設當前目錄向上兩級是項目根目錄
+    return current.parent.parent
+
 # 輸出根目錄（放在項目根目錄下，兩層結構）
-# 使用相對路徑，從項目根目錄開始
-OUTPUT_ROOT = Path("output")
+PROJECT_ROOT = _get_project_root()
+OUTPUT_ROOT = PROJECT_ROOT / "output"
 SESSIONS_DIR = OUTPUT_ROOT  # 直接使用 output 作為會話根目錄
 
 def get_session_id():

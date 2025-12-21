@@ -509,10 +509,24 @@ def generate_combined_pptx(
                 # 重新拋出錯誤，讓外層處理
                 raise Exception(error_msg) from table_error
         
-        # 保存文件
-        output_dir = config.OUTPUT_DIR
-        output_dir.mkdir(exist_ok=True)
-        output_path = output_dir / output_filename
+        # 保存文件 - 使用新的路徑管理系統
+        # 嘗試使用 Streamlit 會話路徑（如果可用）
+        try:
+            import streamlit as st
+            from ..path_manager import get_step_output_dir, OUTPUT_FILENAMES
+            # 使用標準化的輸出路徑（output/{session_id}/）
+            session_dir = get_step_output_dir('tcfd')
+            session_dir.mkdir(parents=True, exist_ok=True)
+            # 如果文件名是標準的 TCFD_table.pptx，使用標準文件名；否則使用提供的文件名
+            if output_filename == "TCFD_table.pptx" or output_filename == OUTPUT_FILENAMES['tcfd']:
+                output_path = session_dir / OUTPUT_FILENAMES['tcfd']
+            else:
+                output_path = session_dir / output_filename
+        except (ImportError, AttributeError):
+            # 如果不在 Streamlit 環境中，回退到舊的邏輯
+            output_dir = config.OUTPUT_DIR
+            output_dir.mkdir(exist_ok=True)
+            output_path = output_dir / output_filename
         
         # 如果文件已存在且被鎖定，使用帶時間戳的文件名
         if output_path.exists():
@@ -524,7 +538,7 @@ def generate_combined_pptx(
                 from datetime import datetime
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 name_parts = output_path.stem, timestamp, output_path.suffix
-                output_path = output_dir / f"{name_parts[0]}_{name_parts[1]}{name_parts[2]}"
+                output_path = output_path.parent / f"{name_parts[0]}_{name_parts[1]}{name_parts[2]}"
         
         prs.save(str(output_path))
         
