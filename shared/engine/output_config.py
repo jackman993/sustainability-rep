@@ -38,18 +38,46 @@ def get_session_id():
     st = _get_streamlit()
     if st is None:
         # 非 Streamlit 環境，返回臨時 ID
-        return str(uuid.uuid4())
+        session_id = str(uuid.uuid4())
+        print(f"[DEBUG] Non-Streamlit environment, generated temp session_id: {session_id}")
+        return session_id
+    
     try:
         # 確保 session_state 可用
         if not hasattr(st, 'session_state'):
-            return str(uuid.uuid4())
+            session_id = str(uuid.uuid4())
+            print(f"[WARNING] session_state not available, generated temp session_id: {session_id}")
+            # 嘗試在 Streamlit UI 中顯示警告
+            try:
+                st.warning(f"⚠️ session_state 不可用，使用臨時 session_id: {session_id}")
+            except:
+                pass
+            return session_id
+        
         if 'session_id' not in st.session_state:
-            st.session_state['session_id'] = str(uuid.uuid4())
-        return st.session_state['session_id']
+            session_id = str(uuid.uuid4())
+            st.session_state['session_id'] = session_id
+            print(f"[DEBUG] Created new session_id: {session_id}")
+        else:
+            session_id = st.session_state['session_id']
+            print(f"[DEBUG] Using existing session_id: {session_id}")
+        
+        return session_id
     except Exception as e:
         # 如果訪問 session_state 失敗，返回臨時 ID
-        print(f"[WARNING] Failed to get session_id: {e}")
-        return str(uuid.uuid4())
+        session_id = str(uuid.uuid4())
+        error_msg = f"[ERROR] Failed to get session_id: {e}"
+        print(error_msg)
+        import traceback
+        traceback.print_exc()
+        # 嘗試在 Streamlit UI 中顯示錯誤
+        try:
+            st.error(f"❌ 獲取 session_id 失敗: {str(e)}")
+            with st.expander("詳細錯誤信息", expanded=False):
+                st.code(traceback.format_exc())
+        except:
+            pass
+        return session_id
 
 def get_session_output_dir():
     """獲取當前會話的輸出目錄（兩層結構：output\{session_id}）"""

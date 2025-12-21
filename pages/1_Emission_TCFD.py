@@ -194,6 +194,17 @@ Please write a concise summary in English, approximately 250 words, that highlig
             from pathlib import Path
             template_path = Path(__file__).parent.parent / "shared" / "engine" / "tcfd" / "handdrawppt.pptx"
             
+            # 顯示調試信息
+            debug_info = st.empty()
+            debug_info.info("🔍 調試模式：顯示詳細執行信息...")
+            
+            # 顯示 session_id（如果可用）
+            try:
+                session_id = st.session_state.get('session_id', '未設置')
+                debug_info.text(f"📋 Session ID: {session_id}")
+            except:
+                debug_info.text("📋 Session ID: 無法獲取")
+            
             output_file = generate_combined_pptx(
                 output_filename="TCFD_table.pptx",
                 template_path=template_path if template_path.exists() else None,
@@ -209,12 +220,47 @@ Please write a concise summary in English, approximately 250 words, that highlig
             status_text.text("Step 3/3: Finalizing report...")
             progress_bar.progress(90)
             
-            if not output_file or not output_file.exists():
-                error_detail = "生成 PPTX 失敗"
-                if output_file is None:
-                    error_detail += "：函數返回 None（請查看終端輸出中的詳細錯誤信息）"
-                elif not output_file.exists():
-                    error_detail += f"：文件不存在（預期路徑：{output_file}）"
+            # 詳細的錯誤檢查和報告
+            debug_info.empty()  # 清除調試信息
+            
+            if output_file is None:
+                error_detail = "❌ 生成 PPTX 失敗：函數返回 None"
+                st.error(error_detail)
+                st.info("💡 請查看下方的詳細錯誤信息和終端輸出")
+                raise Exception(error_detail)
+            
+            if not hasattr(output_file, 'exists'):
+                error_detail = f"❌ 返回的路徑對象無效：{type(output_file)}"
+                st.error(error_detail)
+                st.code(f"返回對象: {output_file}")
+                raise Exception(error_detail)
+            
+            if not output_file.exists():
+                error_detail = f"❌ 文件不存在（預期路徑：{output_file}）"
+                st.error(error_detail)
+                
+                # 顯示詳細的調試信息
+                with st.expander("🔍 調試信息", expanded=True):
+                    st.write(f"**返回的路徑類型**: {type(output_file)}")
+                    st.write(f"**返回的路徑**: {output_file}")
+                    st.write(f"**絕對路徑**: {output_file.resolve() if hasattr(output_file, 'resolve') else 'N/A'}")
+                    st.write(f"**父目錄**: {output_file.parent if hasattr(output_file, 'parent') else 'N/A'}")
+                    st.write(f"**父目錄是否存在**: {output_file.parent.exists() if hasattr(output_file, 'parent') else 'N/A'}")
+                    
+                    # 檢查 output 目錄
+                    from pathlib import Path
+                    output_root = Path(__file__).parent.parent / "output"
+                    st.write(f"**Output 根目錄**: {output_root}")
+                    st.write(f"**Output 根目錄是否存在**: {output_root.exists()}")
+                    
+                    if output_root.exists():
+                        session_dirs = [d for d in output_root.iterdir() if d.is_dir()]
+                        st.write(f"**會話目錄數量**: {len(session_dirs)}")
+                        for session_dir in session_dirs[:5]:
+                            files = list(session_dir.glob("*.pptx"))
+                            st.write(f"  - {session_dir.name}: {len(files)} 個 PPTX 文件")
+                
+                st.info("💡 請查看終端輸出中的詳細錯誤信息和調試日誌")
                 raise Exception(error_detail)
             
             progress_bar.progress(100)

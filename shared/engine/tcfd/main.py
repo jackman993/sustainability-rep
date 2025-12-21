@@ -517,65 +517,102 @@ def generate_combined_pptx(
         # 保存文件 - 使用統一的路徑管理器
         import streamlit as st
         
+        print("[DEBUG] ========== TCFD 文件保存開始 ==========")
+        
         # 使用統一的 path_manager 獲取輸出路徑（包含 session_id）
         try:
+            print("[DEBUG] Step 1: 獲取輸出路徑...")
             output_path = get_tcfd_output_path()
+            print(f"[DEBUG] Step 1 成功: {output_path}")
         except Exception as path_error:
-            error_msg = f"Failed to get output path: {str(path_error)}"
+            error_msg = f"[ERROR] Failed to get output path: {str(path_error)}"
             print(error_msg)
             import traceback
-            traceback.print_exc()
+            full_traceback = traceback.format_exc()
+            print(full_traceback)
             # 嘗試在 Streamlit 中顯示錯誤（如果可用）
             try:
-                st.error(f"路徑獲取失敗: {str(path_error)}")
-                st.code(traceback.format_exc())
+                st.error(f"❌ 路徑獲取失敗: {str(path_error)}")
+                with st.expander("詳細錯誤信息", expanded=True):
+                    st.code(full_traceback)
             except:
                 pass
             raise Exception(error_msg) from path_error
         
         # 確保目錄存在
         try:
+            print(f"[DEBUG] Step 2: 創建目錄 {output_path.parent}...")
             output_path.parent.mkdir(parents=True, exist_ok=True)
+            print(f"[DEBUG] Step 2 成功: 目錄已創建/存在")
+            print(f"[DEBUG] 目錄是否存在: {output_path.parent.exists()}")
         except Exception as dir_error:
-            error_msg = f"Failed to create output directory: {str(dir_error)}"
+            error_msg = f"[ERROR] Failed to create output directory: {str(dir_error)}"
             print(error_msg)
             import traceback
-            traceback.print_exc()
+            full_traceback = traceback.format_exc()
+            print(full_traceback)
             try:
-                st.error(f"目錄創建失敗: {str(dir_error)}")
-                st.code(traceback.format_exc())
+                st.error(f"❌ 目錄創建失敗: {str(dir_error)}")
+                with st.expander("詳細錯誤信息", expanded=True):
+                    st.code(full_traceback)
             except:
                 pass
             raise Exception(error_msg) from dir_error
         
         # 保存文件
         try:
+            print(f"[DEBUG] Step 3: 保存文件到 {output_path}...")
+            print(f"[DEBUG] Presentation 對象: {type(prs)}")
+            print(f"[DEBUG] Slides 數量: {len(prs.slides)}")
             prs.save(str(output_path))
+            print(f"[DEBUG] Step 3 成功: 文件已保存")
+            print(f"[DEBUG] 文件是否存在: {output_path.exists()}")
+            if output_path.exists():
+                file_size = output_path.stat().st_size
+                print(f"[DEBUG] 文件大小: {file_size} bytes")
         except Exception as save_error:
-            error_msg = f"Failed to save PPTX file: {str(save_error)}"
+            error_msg = f"[ERROR] Failed to save PPTX file: {str(save_error)}"
             print(error_msg)
             import traceback
-            traceback.print_exc()
+            full_traceback = traceback.format_exc()
+            print(full_traceback)
             try:
-                st.error(f"文件保存失敗: {str(save_error)}")
-                st.code(traceback.format_exc())
+                st.error(f"❌ 文件保存失敗: {str(save_error)}")
+                with st.expander("詳細錯誤信息", expanded=True):
+                    st.code(full_traceback)
             except:
                 pass
             raise Exception(error_msg) from save_error
         
         # 更新會話活動時間（用於會話清理）
         try:
+            print("[DEBUG] Step 4: 更新會話活動時間...")
             update_session_activity()
+            print("[DEBUG] Step 4 成功")
         except Exception as activity_error:
             # 更新活動時間失敗不影響主流程，只記錄警告
-            print(f"Warning: Failed to update session activity: {str(activity_error)}")
+            print(f"[WARNING] Failed to update session activity: {str(activity_error)}")
+            try:
+                st.warning(f"⚠️ 更新會話活動時間失敗: {str(activity_error)}")
+            except:
+                pass
         
         # 保存路徑到 session_state（供其他模組讀取）
         try:
+            print("[DEBUG] Step 5: 保存路徑到 session_state...")
             st.session_state["tcfd_report_file"] = str(output_path)
+            print(f"[DEBUG] Step 5 成功: {st.session_state.get('tcfd_report_file')}")
         except Exception as state_error:
             # session_state 保存失敗不影響主流程，只記錄警告
-            print(f"Warning: Failed to save path to session_state: {str(state_error)}")
+            print(f"[WARNING] Failed to save path to session_state: {str(state_error)}")
+            try:
+                st.warning(f"⚠️ 保存路徑到 session_state 失敗: {str(state_error)}")
+            except:
+                pass
+        
+        print("[DEBUG] ========== TCFD 文件保存完成 ==========")
+        print(f"[DEBUG] 最終輸出路徑: {output_path}")
+        print(f"[DEBUG] 最終輸出路徑 (absolute): {output_path.resolve()}")
         
         return output_path
         

@@ -46,14 +46,28 @@ def get_tcfd_report_path() -> Path | None:
 def get_tcfd_output_path() -> Path:
     """獲取 TCFD 報告輸出路徑（兩層結構：output/{session_id}/TCFD_table.pptx）"""
     try:
+        print("[DEBUG] Getting TCFD output path...")
         session_dir = get_step_output_dir('tcfd')  # 現在直接返回會話目錄
+        print(f"[DEBUG] Session directory: {session_dir}")
         output_path = session_dir / OUTPUT_FILENAMES['tcfd']
+        print(f"[DEBUG] Output path: {output_path}")
+        print(f"[DEBUG] Output path (absolute): {output_path.resolve()}")
         return output_path
     except Exception as e:
-        error_msg = f"Failed to get TCFD output path: {str(e)}"
+        error_msg = f"[ERROR] Failed to get TCFD output path: {str(e)}"
         print(error_msg)
         import traceback
-        traceback.print_exc()
+        full_traceback = traceback.format_exc()
+        print(full_traceback)
+        # 嘗試在 Streamlit UI 中顯示錯誤
+        try:
+            st = _get_streamlit()
+            if st is not None:
+                st.error(f"❌ 獲取 TCFD 輸出路徑失敗: {str(e)}")
+                with st.expander("詳細錯誤信息", expanded=False):
+                    st.code(full_traceback)
+        except:
+            pass
         raise Exception(error_msg) from e
 
 def get_environment_output_path() -> Path:
