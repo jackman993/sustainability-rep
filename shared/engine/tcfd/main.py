@@ -509,22 +509,18 @@ def generate_combined_pptx(
                 # 重新拋出錯誤，讓外層處理
                 raise Exception(error_msg) from table_error
         
-        # 保存文件 - 使用簡化的路徑計算（與舊方案相同的思路）
-        # 1. 計算項目根目錄（從當前文件位置向上四級）
-        # main.py 在 shared/engine/tcfd/main.py，向上四級到項目根目錄
-        current_file = Path(__file__).resolve()  # main.py 的位置
-        project_root = current_file.parent.parent.parent.parent  # 向上四級到項目根目錄
-        output_root = project_root / "output"
+        # 保存文件 - 直接使用 output_config 中定義的路徑（與舊方案使用 config.OUTPUT_DIR 相同）
+        from ..output_config import OUTPUT_ROOT
         
-        # 2. 獲取 session_id
+        # 獲取 session_id
         import streamlit as st
         import uuid
         session_id = st.session_state.get('session_id', str(uuid.uuid4()))
         if 'session_id' not in st.session_state:
             st.session_state['session_id'] = session_id
         
-        # 3. 構建輸出路徑
-        session_dir = output_root / session_id
+        # 構建輸出路徑
+        session_dir = OUTPUT_ROOT / session_id
         session_dir.mkdir(parents=True, exist_ok=True)
         output_path = session_dir / output_filename
         
