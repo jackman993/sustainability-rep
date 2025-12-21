@@ -509,30 +509,16 @@ def generate_combined_pptx(
                 # 重新拋出錯誤，讓外層處理
                 raise Exception(error_msg) from table_error
         
-        # 保存文件 - 使用 config.OUTPUT_DIR（已修改為指向項目根目錄的 output）
-        # 獲取 session_id
+        # 保存文件 - 簡單直接，與舊方案相同
         import streamlit as st
         import uuid
+        
         session_id = st.session_state.get('session_id', str(uuid.uuid4()))
         if 'session_id' not in st.session_state:
             st.session_state['session_id'] = session_id
         
-        # 構建輸出路徑（使用 config.OUTPUT_DIR，現在指向項目根目錄的 output）
-        session_dir = config.OUTPUT_DIR / session_id
-        session_dir.mkdir(parents=True, exist_ok=True)
-        output_path = session_dir / output_filename
-        
-        # 4. 如果文件已存在且被鎖定，使用帶時間戳的文件名
-        if output_path.exists():
-            try:
-                output_path.unlink()
-            except PermissionError:
-                from datetime import datetime
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                name_parts = output_path.stem, timestamp, output_path.suffix
-                output_path = output_path.parent / f"{name_parts[0]}_{name_parts[1]}{name_parts[2]}"
-        
-        # 5. 保存文件
+        output_path = config.OUTPUT_DIR / session_id / output_filename
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         prs.save(str(output_path))
         
         return output_path
