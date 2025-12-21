@@ -39,8 +39,9 @@ print(f"[DIAGNOSIS] output_config.py 位置: {Path(__file__).resolve()}")
 print(f"[DIAGNOSIS] PROJECT_ROOT 計算結果: {PROJECT_ROOT}")
 print(f"[DIAGNOSIS] OUTPUT_ROOT: {OUTPUT_ROOT}")
 print(f"[DIAGNOSIS] OUTPUT_ROOT 是否存在: {OUTPUT_ROOT.exists()}")
-print(f"[DIAGNOSIS] OUTPUT_ROOT 是否可寫: {OUTPUT_ROOT.parent.exists() and os.access(OUTPUT_ROOT.parent, os.W_OK) if OUTPUT_ROOT.parent.exists() else False}")
-import os
+print(f"[DIAGNOSIS] OUTPUT_ROOT 父目錄是否存在: {OUTPUT_ROOT.parent.exists()}")
+print(f"[DIAGNOSIS] OUTPUT_ROOT 父目錄是否可寫: {OUTPUT_ROOT.parent.exists() and os.access(OUTPUT_ROOT.parent, os.W_OK) if OUTPUT_ROOT.parent.exists() else False}")
+print(f"[DIAGNOSIS] OUTPUT_ROOT 是否可寫: {OUTPUT_ROOT.exists() and os.access(OUTPUT_ROOT, os.W_OK) if OUTPUT_ROOT.exists() else False}")
 
 def get_session_id():
     """獲取當前會話 ID"""
@@ -92,7 +93,65 @@ def get_session_output_dir():
     """獲取當前會話的輸出目錄（兩層結構：output\{session_id}）"""
     session_id = get_session_id()
     session_dir = SESSIONS_DIR / session_id
-    session_dir.mkdir(parents=True, exist_ok=True)
+    
+    # 強制創建目錄（多次嘗試）
+    print(f"[DIAGNOSIS] 嘗試創建目錄: {session_dir}")
+    print(f"[DIAGNOSIS] SESSIONS_DIR: {SESSIONS_DIR}")
+    print(f"[DIAGNOSIS] SESSIONS_DIR 是否存在: {SESSIONS_DIR.exists()}")
+    print(f"[DIAGNOSIS] SESSIONS_DIR 是否可寫: {SESSIONS_DIR.exists() and os.access(SESSIONS_DIR, os.W_OK) if SESSIONS_DIR.exists() else False}")
+    
+    # 先確保父目錄（SESSIONS_DIR）存在
+    if not SESSIONS_DIR.exists():
+        print(f"[DIAGNOSIS] 父目錄不存在，先創建父目錄: {SESSIONS_DIR}")
+        try:
+            SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
+        except Exception as parent_ex:
+            print(f"[WARNING] 創建父目錄失敗: {parent_ex}")
+            try:
+                os.makedirs(str(SESSIONS_DIR), exist_ok=True, mode=0o777)
+            except Exception as parent_ex2:
+                print(f"[ERROR] os.makedirs 創建父目錄也失敗: {parent_ex2}")
+                raise Exception(f"無法創建父目錄 {SESSIONS_DIR}: {parent_ex}, {parent_ex2}")
+    
+    # 方法 1: 標準 mkdir
+    try:
+        session_dir.mkdir(parents=True, exist_ok=True)
+        print(f"[DIAGNOSIS] mkdir() 調用完成")
+    except Exception as e1:
+        print(f"[WARNING] mkdir() 失敗: {e1}")
+        # 方法 2: 逐級創建
+        try:
+            session_dir.mkdir(exist_ok=True)
+            print(f"[DIAGNOSIS] 逐級創建成功")
+        except Exception as e2:
+            print(f"[WARNING] 逐級創建失敗: {e2}")
+            # 方法 3: 使用 os.makedirs 強制創建
+            try:
+                os.makedirs(str(session_dir), exist_ok=True, mode=0o777)
+                print(f"[DIAGNOSIS] os.makedirs() 成功")
+            except Exception as e3:
+                print(f"[ERROR] 所有創建方法都失敗: {e3}")
+                raise Exception(f"無法創建輸出目錄 {session_dir}: {e3}")
+    
+    # 驗證目錄是否真的存在
+    if not session_dir.exists():
+        raise Exception(f"目錄創建失敗，目錄不存在: {session_dir}")
+    
+    # 驗證目錄是否可寫，並嘗試修復權限
+    if not os.access(session_dir, os.W_OK):
+        print(f"[WARNING] 目錄存在但不可寫: {session_dir}")
+        # 嘗試修改權限
+        try:
+            os.chmod(str(session_dir), 0o777)
+            print(f"[DIAGNOSIS] 嘗試修改權限成功")
+            # 再次檢查
+            if not os.access(session_dir, os.W_OK):
+                print(f"[WARNING] 修改權限後仍不可寫: {session_dir}")
+        except Exception as e:
+            print(f"[WARNING] 無法修改權限: {e}")
+    
+    print(f"[DIAGNOSIS] 最終目錄狀態: 存在={session_dir.exists()}, 可寫={os.access(session_dir, os.W_OK)}")
+    print(f"[DIAGNOSIS] Session directory 是否可寫: {os.access(session_dir, os.W_OK)}")
     return session_dir
 
 # 各步驟的輸出目錄（簡化：直接返回會話目錄，文件通過文件名區分）
