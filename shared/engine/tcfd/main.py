@@ -509,11 +509,9 @@ def generate_combined_pptx(
                 # 重新拋出錯誤，讓外層處理
                 raise Exception(error_msg) from table_error
         
-        # 保存文件 - 使用專門的路徑管理引擎（與 environment 相同的方式）
-        from ..path_manager import get_tcfd_output_path
-        output_path = get_tcfd_output_path()
-        prs.save(str(output_path))
-        return output_path
+        # 保存文件 - 一行搞定
+        from ..output_config import get_session_output_dir
+        return prs.save(str(output_path := get_session_output_dir() / "TCFD_table.pptx")) or output_path
         
     except Exception as e:
         error_msg = f"Error generating combined PPTX: {str(e)}"
