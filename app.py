@@ -2,6 +2,13 @@
 ESG Report Generation System - Minimal Version
 """
 import streamlit as st
+from pathlib import Path
+import sys
+
+# 添加項目根目錄到 Python 路徑（確保能找到 shared 模組）
+project_root = Path(__file__).parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 st.set_page_config(
     page_title="ESG Report System",

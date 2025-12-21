@@ -5,6 +5,14 @@ Step 4: Governance & Social Report
 PAGE_TITLE = "Step 4: Governance & Social Report"
 
 import streamlit as st
+from pathlib import Path
+import sys
+
+# 添加項目根目錄到 Python 路徑（確保能找到 shared 模組）
+project_root = Path(__file__).parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
 from shared.ui.sidebar_config import render_sidebar_config
 
 st.set_page_config(
