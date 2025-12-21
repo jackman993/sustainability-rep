@@ -27,21 +27,9 @@ def _get_streamlit():
     except ImportError:
         return None
 
-def _get_project_root() -> Path:
-    """獲取項目根目錄（包含 app.py 的目錄）"""
-    # 從當前文件位置向上查找，直到找到包含 app.py 的目錄
-    current = Path(__file__).resolve()
-    # 當前文件在 shared/engine/output_config.py，向上兩級到項目根目錄
-    # 路徑結構：項目根目錄/shared/engine/output_config.py
-    # 所以向上兩級：current.parent.parent 就是項目根目錄
-    for parent in [current.parent.parent, current.parent.parent.parent]:
-        if (parent / "app.py").exists():
-            return parent
-    # 如果找不到，假設當前目錄向上兩級是項目根目錄
-    return current.parent.parent
-
-# 輸出根目錄（放在項目根目錄下，兩層結構）
-PROJECT_ROOT = _get_project_root()
+# 輸出根目錄（直接寫死，不查找）
+# 從 shared/engine/output_config.py 向上三級到項目根目錄
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 OUTPUT_ROOT = PROJECT_ROOT / "output"
 SESSIONS_DIR = OUTPUT_ROOT  # 直接使用 output 作為會話根目錄
 
