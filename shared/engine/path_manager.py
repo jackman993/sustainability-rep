@@ -54,7 +54,6 @@ def get_tcfd_output_path() -> Path:
         print(f"[DIAGNOSIS] Session directory (absolute): {session_dir.resolve()}")
         print(f"[DIAGNOSIS] Session directory 是否存在: {session_dir.exists()}")
         print(f"[DIAGNOSIS] Session directory 是否可寫: {os.access(session_dir.parent, os.W_OK) if session_dir.parent.exists() else False}")
-        import os
         output_path = session_dir / OUTPUT_FILENAMES['tcfd']
         print(f"[DIAGNOSIS] Output path: {output_path}")
         print(f"[DIAGNOSIS] Output path (absolute): {output_path.resolve()}")
