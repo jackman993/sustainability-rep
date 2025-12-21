@@ -509,18 +509,13 @@ def generate_combined_pptx(
                 # 重新拋出錯誤，讓外層處理
                 raise Exception(error_msg) from table_error
         
-        # 保存文件 - 簡單直接，與舊方案相同
+        # 保存文件 - 最簡單的方式
         import streamlit as st
         import uuid
-        
-        session_id = st.session_state.get('session_id', str(uuid.uuid4()))
-        if 'session_id' not in st.session_state:
-            st.session_state['session_id'] = session_id
-        
-        output_path = config.OUTPUT_DIR / session_id / output_filename
+        output_path = config.OUTPUT_DIR / st.session_state.setdefault('session_id', str(uuid.uuid4())) / output_filename
         output_path.parent.mkdir(parents=True, exist_ok=True)
         prs.save(str(output_path))
-        
+        print(f"文件已保存: {output_path}")  # 確認保存成功
         return output_path
         
     except Exception as e:
