@@ -35,9 +35,9 @@ def remove_all_borders(cell):
         ln.append(noFill)
         tcPr.append(ln)
 
-def init_zebra_table(slide, rows=4, cols=6):
-    left, top = Inches(0.5), Inches(1.0)
-    width, height = Inches(12.0), Inches(4.5)
+def init_zebra_table(slide, rows=6, cols=6):
+    left, top = Inches(0.5), Inches(0.8)
+    width, height = Inches(12.0), Inches(5.8)
     table_shape = slide.shapes.add_table(rows, cols, left, top, width, height)
     table = table_shape.table
     
@@ -132,17 +132,38 @@ def create_slide_transformation_corrected(prs=None, output_filename=None, data_l
         table.cell(3, c).vertical_anchor = MSO_ANCHOR.TOP
         set_cell_bg(table.cell(3, c), COLOR_BG_STRIPE)
     
+    # --- Row 4 (預設格式，白底) ---
+    table.cell(2, 0).merge(table.cell(4, 0))  # 繼續合併 Type 列
+    set_text(table.cell(4, 1), "Market\nDisruption", 9, False, COLOR_TEXT_SUB)
+    set_text(table.cell(4, 2), "Medium-term", 9, False, COLOR_TEXT_SUB)
+    for c in range(3, 6):
+        set_cell_bg(table.cell(4, c), COLOR_BG_WHITE)
+    for c in range(0, 3):
+        set_cell_bg(table.cell(4, c), COLOR_BG_WHITE)
+    
+    # --- Row 5 (預設格式，灰底) ---
+    table.cell(2, 0).merge(table.cell(5, 0))  # 繼續合併 Type 列
+    set_text(table.cell(5, 1), "Reputation\nRisk", 9, False, COLOR_TEXT_SUB)
+    set_text(table.cell(5, 2), "Long-term", 9, False, COLOR_TEXT_SUB)
+    for c in range(3, 6):
+        set_text(table.cell(5, c), "", 9)
+        table.cell(5, c).vertical_anchor = MSO_ANCHOR.TOP
+        set_cell_bg(table.cell(5, c), COLOR_BG_STRIPE)
+    for c in range(0, 3):
+        set_cell_bg(table.cell(5, c), COLOR_BG_STRIPE)
+    
     # 填充 LLM 返回的數據（如果有）
     if data_lines:
         # 解析 data_lines（格式：Description ||| Financial Impact ||| Adaptation）
-        # 表格結構：Row 2 和 Row 3 的第 3-5 列需要填充
-        data_rows = [2, 3]  # 需要填充數據的行
+        # 表格結構：Row 2-5 的第 3-5 列需要填充（支持最多4行數據）
+        data_rows = [2, 3, 4, 5]  # 需要填充數據的行
         
-        for idx, data_line in enumerate(data_lines[:2]):  # 最多2行數據
+        for idx, data_line in enumerate(data_lines[:4]):  # 最多4行數據
             if idx >= len(data_rows):
                 break
             
             row_idx = data_rows[idx]
+            
             # 解析 ||| 分隔的數據
             parts = [p.strip() for p in data_line.split('|||')]
             
@@ -156,13 +177,13 @@ def create_slide_transformation_corrected(prs=None, output_filename=None, data_l
                     description = desc_parts[0].strip()
             
             # 填充到對應的列（Description, Financial Impact, Adaptation）
+            # 使用較小的字體以容納更多文字
             if description:
-                # 移除長度限制，讓文字更完整
-                set_text(table.cell(row_idx, 3), description, 9)
+                set_text(table.cell(row_idx, 3), description, 8)  # 從 9 降到 8
             if len(parts) >= 2 and parts[1]:
-                set_text(table.cell(row_idx, 4), parts[1].strip(), 9)  # Financial Impact
+                set_text(table.cell(row_idx, 4), parts[1].strip(), 8)  # Financial Impact
             if len(parts) >= 3 and parts[2]:
-                set_text(table.cell(row_idx, 5), parts[2].strip(), 9)  # Adaptation
+                set_text(table.cell(row_idx, 5), parts[2].strip(), 8)  # Adaptation
 
     # 只有在獨立模式下才保存
     if output_mode and output_filename:
