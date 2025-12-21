@@ -44,6 +44,10 @@ def get_prompt(prompt_id: str, industry: str = None, revenue: str = None, **kwar
     # 獲取特定表格的 prompt 模板
     prompt_template = PROMPTS.get(prompt_id, "")
     
+    # 替換 prompt 模板中的 {INDUSTRY} 變量
+    industry = industry or DEFAULT_INDUSTRY
+    prompt_template = prompt_template.replace('{INDUSTRY}', industry)
+    
     # 構建完整 prompt（common_role + specific prompt）
     full_prompt = f"{common_role}\n\n{prompt_template}"
     
@@ -71,25 +75,87 @@ Context: Current carbon emission data
 PROMPTS = {
     # 共用角色設定 (會被安插在每個 Prompt 的開頭)
     'common_role': """
-Role: You are the Chief Sustainability Officer (CSO) of a {INDUSTRY} company.
-Revenue: {REVENUE}. 
-Context: We are writing a TCFD report.
-Style: Technical, precise, no fluff. Use specific industry terminology (e.g., if Semi: "Fab", "Wafer"; if Text: "Dyeing", "ZDHC").
+Role: You are a dual expert combining deep industry expertise and ESG knowledge:
+
+1. INDUSTRY EXPERT specializing in {INDUSTRY} sector:
+   - Deep knowledge of {INDUSTRY}-specific regulations, standards, and compliance requirements
+   - Understanding of {INDUSTRY} market dynamics, competitive landscape, and customer/client characteristics
+   - Expertise in {INDUSTRY} technical processes, supply chains, operational challenges, and business models
+   - Familiarity with {INDUSTRY}-specific terminology, technologies, and industry trends
+   - Knowledge of {INDUSTRY} risk factors, opportunities, and strategic considerations
+
+2. ESG & CLIMATE RISK EXPERT:
+   - Expertise in TCFD framework, climate risk assessment, and sustainability reporting
+   - Understanding of ESG best practices, stakeholder expectations, and regulatory trends
+   - Knowledge of climate-related financial impacts and adaptation strategies
+
+Company Context: {INDUSTRY} company with revenue of {REVENUE}.
+Your analysis MUST be deeply rooted in {INDUSTRY} sector specifics. Provide detailed, industry-specific insights with comprehensive explanations.
+
+Style: Technical, precise, detailed, and industry-specific. Use {INDUSTRY}-specific terminology, regulations, market insights, and technical details. Provide comprehensive analysis with sufficient detail to demonstrate deep industry knowledge.
+
 Constraint: Output PURE TEXT only. Do not use Markdown tables.
 Separator: Use "|||" to separate columns.
 Bullet points: Use ";" to separate multiple points within a cell.
+Detail Level: Provide comprehensive, detailed content. Include specific examples, quantifiable impacts, and actionable strategies relevant to {INDUSTRY} sector.
 """,
 
     # [Table 1] Transformation Risks
     'prompt_table_1_trans': """
-Task: Generate content for 'Table 1: Transformation Risks'.
-Structure: Output exactly 2 lines.
-Line 1: Policy & Legal Risk (Short Term) - Focus on Carbon Tax/Pricing.
-Line 2: Market & Technology Risk (Medium Term) - Focus on Client Supply Chain Demands.
-Format: Risk Description ||| Financial Impact (Money in 'K' or %) ||| Response Action & Budget
-Example Output:
-Carbon tax implementation in 2026; Stricter emission caps ||| Operating cost increase by $50,000K; Gross margin impact -1.5% ||| Implement internal carbon pricing (Budget: $5,000K); Accelerate renewable procurement
-Client RE100 requirement; Competitor low-carbon tech ||| Potential revenue loss of $200,000K from key clients ||| R&D investment in green manufacturing (Budget: $80,000K); Obtain ISO 14067 certification
+Task: Generate comprehensive, detailed content for 'Table 1: Transformation Risks' for {INDUSTRY} industry.
+
+As an industry expert, you MUST provide:
+- Industry-specific regulations, policies, and compliance requirements affecting {INDUSTRY}
+- Detailed market analysis including trends, competitive dynamics, customer behavior, and market shifts in {INDUSTRY} sector
+- Technology disruptions and innovations specific to {INDUSTRY}
+- Quantified financial impacts based on {INDUSTRY} operational characteristics and business model
+- Specific, actionable strategies tailored to {INDUSTRY} sector
+
+Structure: Output exactly 4 lines to match the table structure. Each line MUST be comprehensive and detailed.
+
+Line 1: Policy & Regulation Risk (Short/Medium Term)
+- Identify SPECIFIC regulations, policies, or compliance requirements affecting {INDUSTRY} sector
+- Include actual or anticipated policy changes (e.g., sector-specific carbon pricing, emission standards, product regulations, trade policies)
+- Analyze compliance deadlines, requirements, and enforcement mechanisms
+- Provide detailed financial impact analysis based on {INDUSTRY} operations
+
+Line 2: Green Product & Technology Risk (Short/Medium Term)
+- Analyze technology disruptions and innovations in {INDUSTRY} (e.g., green alternatives, low-carbon processes, sustainable materials)
+- Assess competitive landscape and how competitors are adopting green technologies
+- Evaluate impact of technology shifts on {INDUSTRY} business model and operations
+- Include specific technologies, processes, or innovations relevant to {INDUSTRY}
+
+Line 3: Market Disruption Risk (Medium Term) - CRITICAL: This MUST be comprehensive
+- Provide DETAILED market analysis including:
+  * Current market trends and shifts in {INDUSTRY} sector
+  * Competitive dynamics and market positioning
+  * Customer/client behavior changes and preferences
+  * Supply chain transformations affecting {INDUSTRY}
+  * Market entry barriers and opportunities
+  * Industry consolidation or fragmentation trends
+- Quantify market risks with specific metrics (market share, revenue, customer segments)
+- Include analysis of how {INDUSTRY} market is evolving
+
+Line 4: Reputation & Brand Risk (Long Term)
+- Analyze ESG reputation risks specific to {INDUSTRY} sector
+- Assess stakeholder expectations (investors, customers, regulators, communities)
+- Evaluate brand value risks and public perception challenges
+- Include industry-specific reputation factors and ESG rating impacts
+
+CRITICAL REQUIREMENTS:
+- Each line MUST contain comprehensive, detailed content (minimum 100-150 words per line)
+- Market analysis (Line 3) MUST NOT be blank and MUST include extensive market insights
+- All analysis MUST be {INDUSTRY}-specific, not generic
+- Include specific examples, regulations, technologies, or market dynamics relevant to {INDUSTRY}
+- Provide quantifiable impacts with detailed financial analysis
+
+Format: Risk Description (comprehensive, industry-specific, detailed) ||| Financial Impact (detailed quantification with specific amounts and percentages) ||| Response Action & Budget (specific, actionable strategies with detailed budget breakdown)
+
+Example Output (for {INDUSTRY}):
+[Detailed policy analysis with specific regulations] ||| [Comprehensive financial impact with multiple cost components] ||| [Specific action plan with detailed budget allocation]
+[Detailed technology analysis] ||| [Comprehensive financial impact] ||| [Specific technology adoption strategy with budget]
+[EXTENSIVE market analysis with trends, competition, customers] ||| [Comprehensive market impact quantification] ||| [Detailed market strategy with budget]
+[Detailed reputation analysis] ||| [Comprehensive brand value impact] ||| [Specific reputation management strategy with budget]
 """,
 
     # [Table 2] Physical Risks
