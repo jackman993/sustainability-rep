@@ -238,6 +238,17 @@ Please write a concise summary in English, approximately 250 words, that highlig
             # 詳細的錯誤檢查和報告
             debug_info.empty()  # 清除調試信息
             
+            # 顯示文件保存確認訊息（如果 generate_combined_pptx 內部沒有顯示）
+            # 注意：generate_combined_pptx 內部已經會顯示成功訊息，這裡作為備份確認
+            if output_file and hasattr(output_file, 'exists') and output_file.exists():
+                try:
+                    file_size = output_file.stat().st_size
+                    file_size_kb = file_size / 1024
+                    st.info(f"📦 **文件確認**: 文件已存在於 `{output_file}`\n\n"
+                           f"📊 **文件大小**: {file_size_kb:.2f} KB")
+                except:
+                    pass
+            
             if output_file is None:
                 error_container.error("❌ 生成 PPTX 失敗：函數返回 None")
                 error_container.info("💡 這通常意味著生成過程中發生了異常，但被內部處理了")

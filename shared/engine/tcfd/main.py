@@ -614,6 +614,19 @@ def generate_combined_pptx(
         print(f"[DEBUG] 最終輸出路徑: {output_path}")
         print(f"[DEBUG] 最終輸出路徑 (absolute): {output_path.resolve()}")
         
+        # 在 UI 中顯示保存成功訊息
+        try:
+            file_size = output_path.stat().st_size if output_path.exists() else 0
+            file_size_kb = file_size / 1024
+            st.success(f"✅ **文件已成功保存！**\n\n"
+                      f"📁 **路徑**: `{output_path}`\n\n"
+                      f"📊 **文件大小**: {file_size_kb:.2f} KB ({file_size:,} bytes)\n\n"
+                      f"📄 **Slides 數量**: {len(prs.slides)} 頁")
+            print(f"[SUCCESS] 文件保存成功並在 UI 中顯示: {output_path}")
+        except Exception as display_error:
+            print(f"[WARNING] 無法在 UI 中顯示成功訊息: {display_error}")
+            # 即使顯示失敗，也不影響返回路徑
+        
         return output_path
         
     except Exception as e:
