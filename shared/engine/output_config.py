@@ -17,6 +17,7 @@ output\{session_id}\Company_report.pptx
 """
 from pathlib import Path
 import uuid
+import os
 
 # 延遲導入 streamlit，避免在非 Streamlit 環境中出錯
 def _get_streamlit():
@@ -32,6 +33,14 @@ def _get_streamlit():
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 OUTPUT_ROOT = PROJECT_ROOT / "output"
 SESSIONS_DIR = OUTPUT_ROOT  # 直接使用 output 作為會話根目錄
+
+# 診斷信息：打印路徑計算結果
+print(f"[DIAGNOSIS] output_config.py 位置: {Path(__file__).resolve()}")
+print(f"[DIAGNOSIS] PROJECT_ROOT 計算結果: {PROJECT_ROOT}")
+print(f"[DIAGNOSIS] OUTPUT_ROOT: {OUTPUT_ROOT}")
+print(f"[DIAGNOSIS] OUTPUT_ROOT 是否存在: {OUTPUT_ROOT.exists()}")
+print(f"[DIAGNOSIS] OUTPUT_ROOT 是否可寫: {OUTPUT_ROOT.parent.exists() and os.access(OUTPUT_ROOT.parent, os.W_OK) if OUTPUT_ROOT.parent.exists() else False}")
+import os
 
 def get_session_id():
     """獲取當前會話 ID"""

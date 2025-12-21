@@ -3,6 +3,7 @@
 處理文件路徑的獲取和管理
 """
 from pathlib import Path
+import os
 from .output_config import get_step_output_dir, OUTPUT_FILENAMES
 
 # 延遲導入 streamlit，避免在非 Streamlit 環境中出錯
@@ -46,12 +47,20 @@ def get_tcfd_report_path() -> Path | None:
 def get_tcfd_output_path() -> Path:
     """獲取 TCFD 報告輸出路徑（兩層結構：output/{session_id}/TCFD_table.pptx）"""
     try:
+        print("[DIAGNOSIS] ========== 路徑診斷開始 ==========")
         print("[DEBUG] Getting TCFD output path...")
         session_dir = get_step_output_dir('tcfd')  # 現在直接返回會話目錄
-        print(f"[DEBUG] Session directory: {session_dir}")
+        print(f"[DIAGNOSIS] Session directory: {session_dir}")
+        print(f"[DIAGNOSIS] Session directory (absolute): {session_dir.resolve()}")
+        print(f"[DIAGNOSIS] Session directory 是否存在: {session_dir.exists()}")
+        print(f"[DIAGNOSIS] Session directory 是否可寫: {os.access(session_dir.parent, os.W_OK) if session_dir.parent.exists() else False}")
+        import os
         output_path = session_dir / OUTPUT_FILENAMES['tcfd']
-        print(f"[DEBUG] Output path: {output_path}")
-        print(f"[DEBUG] Output path (absolute): {output_path.resolve()}")
+        print(f"[DIAGNOSIS] Output path: {output_path}")
+        print(f"[DIAGNOSIS] Output path (absolute): {output_path.resolve()}")
+        print(f"[DIAGNOSIS] Output path 父目錄是否存在: {output_path.parent.exists()}")
+        print(f"[DIAGNOSIS] Output path 父目錄是否可寫: {os.access(output_path.parent, os.W_OK) if output_path.parent.exists() else False}")
+        print("[DIAGNOSIS] ========== 路徑診斷結束 ==========")
         return output_path
     except Exception as e:
         error_msg = f"[ERROR] Failed to get TCFD output path: {str(e)}"

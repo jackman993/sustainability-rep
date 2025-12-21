@@ -306,15 +306,34 @@ Please write a concise summary in English, approximately 250 words, that highlig
             st.info(f"**Report Summary**：\n\n{summary}")
             
             # 顯示下載按鈕
-            with open(output_file, "rb") as f:
-                st.download_button(
-                    "📥 Download TCFD Report (TCFD_table.pptx)",
-                    data=f.read(),
-                    file_name="TCFD_table.pptx",
-                    mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                    use_container_width=True,
-                    key="download_tcfd_report_tab2"
-                )
+            try:
+                # 確保 output_file 是字符串路徑
+                file_path = str(output_file) if hasattr(output_file, '__str__') else output_file
+                
+                # 確認文件存在
+                if not Path(file_path).exists():
+                    st.warning(f"⚠️ 文件路徑存在但文件無法訪問: {file_path}")
+                    st.info("💡 文件可能已保存，但當前會話無法訪問。請檢查文件系統權限。")
+                else:
+                    with open(file_path, "rb") as f:
+                        file_data = f.read()
+                        file_size = len(file_data)
+                        st.download_button(
+                            "📥 Download TCFD Report (TCFD_table.pptx)",
+                            data=file_data,
+                            file_name="TCFD_table.pptx",
+                            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                            use_container_width=True,
+                            key="download_tcfd_report_tab2"
+                        )
+                        st.caption(f"文件大小: {file_size / 1024:.2f} KB")
+            except Exception as download_error:
+                st.error(f"❌ 無法創建下載按鈕: {str(download_error)}")
+                st.info(f"💡 文件已保存到: `{output_file}`")
+                st.info("💡 請手動從服務器下載文件")
+                import traceback
+                with st.expander("詳細錯誤信息", expanded=False):
+                    st.code(traceback.format_exc())
             
         except Exception as e:
             progress_bar.empty()
@@ -334,15 +353,35 @@ Please write a concise summary in English, approximately 250 words, that highlig
         
         # 顯示下載按鈕
         output_file = st.session_state.get("tcfd_report_file")
-        with open(output_file, "rb") as f:
-            st.download_button(
-                "📥 Download TCFD Report (TCFD_table.pptx)",
-                data=f.read(),
-                file_name="TCFD_table.pptx",
-                mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                use_container_width=True,
-                key="download_tcfd_report_tab2_existing"
-            )
+        try:
+            # 確保 output_file 是字符串路徑
+            if isinstance(output_file, Path):
+                file_path = str(output_file)
+            else:
+                file_path = output_file
+            
+            # 確認文件存在
+            if not Path(file_path).exists():
+                st.warning(f"⚠️ 文件路徑存在但文件無法訪問: {file_path}")
+            else:
+                with open(file_path, "rb") as f:
+                    file_data = f.read()
+                    file_size = len(file_data)
+                    st.download_button(
+                        "📥 Download TCFD Report (TCFD_table.pptx)",
+                        data=file_data,
+                        file_name="TCFD_table.pptx",
+                        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                        use_container_width=True,
+                        key="download_tcfd_report_tab2_existing"
+                    )
+                    st.caption(f"文件大小: {file_size / 1024:.2f} KB")
+        except Exception as download_error:
+            st.error(f"❌ 無法創建下載按鈕: {str(download_error)}")
+            st.info(f"💡 文件路徑: `{output_file}`")
+            import traceback
+            with st.expander("詳細錯誤信息", expanded=False):
+                st.code(traceback.format_exc())
 
 st.divider()
 

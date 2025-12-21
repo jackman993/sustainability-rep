@@ -564,12 +564,38 @@ def generate_combined_pptx(
             print(f"[DEBUG] Step 3: 保存文件到 {output_path}...")
             print(f"[DEBUG] Presentation 對象: {type(prs)}")
             print(f"[DEBUG] Slides 數量: {len(prs.slides)}")
-            prs.save(str(output_path))
+            
+            # 確保路徑是字符串
+            save_path = str(output_path)
+            print(f"[DEBUG] 保存路徑 (字符串): {save_path}")
+            
+            # 保存文件
+            prs.save(save_path)
+            print(f"[DEBUG] prs.save() 調用完成")
+            
+            # 立即驗證文件是否真的存在
+            import time
+            time.sleep(0.1)  # 等待文件系統更新
+            
+            if not Path(save_path).exists():
+                error_msg = f"[ERROR] 文件保存後不存在！保存路徑: {save_path}"
+                print(error_msg)
+                print(f"[DEBUG] 父目錄是否存在: {Path(save_path).parent.exists()}")
+                print(f"[DEBUG] 父目錄: {Path(save_path).parent}")
+                raise Exception(error_msg)
+            
+            file_size = Path(save_path).stat().st_size
             print(f"[DEBUG] Step 3 成功: 文件已保存")
-            print(f"[DEBUG] 文件是否存在: {output_path.exists()}")
-            if output_path.exists():
-                file_size = output_path.stat().st_size
-                print(f"[DEBUG] 文件大小: {file_size} bytes")
+            print(f"[DEBUG] 文件大小: {file_size} bytes")
+            
+            # 驗證文件大小是否合理（至少應該有幾 KB）
+            if file_size < 1000:  # 小於 1KB 可能不正常
+                print(f"[WARNING] 文件大小異常小: {file_size} bytes，可能保存不完整")
+                try:
+                    st.warning(f"⚠️ 文件大小異常小 ({file_size} bytes)，可能保存不完整")
+                except:
+                    pass
+            
         except Exception as save_error:
             error_msg = f"[ERROR] Failed to save PPTX file: {str(save_error)}"
             print(error_msg)
@@ -610,24 +636,39 @@ def generate_combined_pptx(
             except:
                 pass
         
-        print("[DEBUG] ========== TCFD 文件保存完成 ==========")
-        print(f"[DEBUG] 最終輸出路徑: {output_path}")
-        print(f"[DEBUG] 最終輸出路徑 (absolute): {output_path.resolve()}")
+        # 最終驗證：確保文件真的存在且有效
+        save_path = str(output_path)
+        final_path = Path(save_path)
         
-        # 在 UI 中顯示保存成功訊息
+        if not final_path.exists():
+            error_msg = f"[ERROR] 最終驗證失敗：文件不存在！路徑: {save_path}"
+            print(error_msg)
+            try:
+                st.error(f"❌ 文件保存驗證失敗：文件不存在於 `{save_path}`")
+                st.info("💡 文件可能沒有真正保存，請檢查權限和路徑")
+            except:
+                pass
+            raise Exception(error_msg)
+        
+        file_size = final_path.stat().st_size
+        print("[DEBUG] ========== TCFD 文件保存完成 ==========")
+        print(f"[DEBUG] 最終輸出路徑: {save_path}")
+        print(f"[DEBUG] 最終輸出路徑 (absolute): {final_path.resolve()}")
+        print(f"[DEBUG] 文件大小: {file_size} bytes")
+        
+        # 在 UI 中顯示保存成功訊息（只有文件真的存在時才顯示）
         try:
-            file_size = output_path.stat().st_size if output_path.exists() else 0
             file_size_kb = file_size / 1024
-            st.success(f"✅ **文件已成功保存！**\n\n"
-                      f"📁 **路徑**: `{output_path}`\n\n"
+            st.success(f"✅ **文件已成功保存並驗證！**\n\n"
+                      f"📁 **路徑**: `{save_path}`\n\n"
                       f"📊 **文件大小**: {file_size_kb:.2f} KB ({file_size:,} bytes)\n\n"
                       f"📄 **Slides 數量**: {len(prs.slides)} 頁")
-            print(f"[SUCCESS] 文件保存成功並在 UI 中顯示: {output_path}")
+            print(f"[SUCCESS] 文件保存成功並在 UI 中顯示: {save_path}")
         except Exception as display_error:
             print(f"[WARNING] 無法在 UI 中顯示成功訊息: {display_error}")
             # 即使顯示失敗，也不影響返回路徑
         
-        return output_path
+        return final_path
         
     except Exception as e:
         error_msg = f"[ERROR] Error generating combined PPTX: {str(e)}"
