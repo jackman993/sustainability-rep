@@ -133,7 +133,11 @@ def create_slide_transformation_corrected(prs=None, output_filename=None, data_l
         set_cell_bg(table.cell(3, c), COLOR_BG_STRIPE)
     
     # --- Row 4 (預設格式，白底) ---
-    table.cell(2, 0).merge(table.cell(4, 0))  # 繼續合併 Type 列
+    # Row 4 和 Row 5 需要獨立合併 Type 列（不能與已合併的 Row 2-3 合併）
+    table.cell(4, 0).merge(table.cell(5, 0))  # Row 4-5 合併 Type 列
+    set_text(table.cell(4, 0), "Transformation\nRisk", 9, True, COLOR_TEXT_SUB)
+    set_cell_bg(table.cell(4, 0), COLOR_BG_WHITE)
+    
     set_text(table.cell(4, 1), "Market\nDisruption", 9, False, COLOR_TEXT_SUB)
     set_text(table.cell(4, 2), "Medium-term", 9, False, COLOR_TEXT_SUB)
     for c in range(3, 6):
@@ -142,7 +146,6 @@ def create_slide_transformation_corrected(prs=None, output_filename=None, data_l
         set_cell_bg(table.cell(4, c), COLOR_BG_WHITE)
     
     # --- Row 5 (預設格式，灰底) ---
-    table.cell(2, 0).merge(table.cell(5, 0))  # 繼續合併 Type 列
     set_text(table.cell(5, 1), "Reputation\nRisk", 9, False, COLOR_TEXT_SUB)
     set_text(table.cell(5, 2), "Long-term", 9, False, COLOR_TEXT_SUB)
     for c in range(3, 6):

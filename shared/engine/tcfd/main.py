@@ -468,36 +468,46 @@ def generate_combined_pptx(
             )
             
             # 統一處理：如果函數接受 prs 參數，直接傳入；否則使用臨時文件
-            if has_prs_param:
-                # 函數接受 prs 參數，直接添加到主 PPTX（一次輸出，不用 add_slide）
-                # 檢查是否還需要 data_lines 參數
-                if 'data_lines' in sig.parameters:
-                    func(prs=prs, data_lines=data_lines)
+            try:
+                if has_prs_param:
+                    # 函數接受 prs 參數，直接添加到主 PPTX（一次輸出，不用 add_slide）
+                    # 檢查是否還需要 data_lines 參數
+                    if 'data_lines' in sig.parameters:
+                        func(prs=prs, data_lines=data_lines)
+                    else:
+                        func(prs=prs)
                 else:
-                    func(prs=prs)
-            else:
-                # 函數不接受 prs 參數，使用臨時文件（向後兼容）
-                with tempfile.NamedTemporaryFile(suffix='.pptx', delete=False) as tmp:
-                    temp_file = Path(tmp.name)
-                
-                try:
-                    # 生成臨時文件
-                    func(data_lines=data_lines, filename=str(temp_file))
+                    # 函數不接受 prs 參數，使用臨時文件（向後兼容）
+                    with tempfile.NamedTemporaryFile(suffix='.pptx', delete=False) as tmp:
+                        temp_file = Path(tmp.name)
                     
-                    # 讀取臨時文件的 slide，直接移動到主 PPTX
-                    temp_prs = Presentation(str(temp_file))
-                    
-                    # 直接移動 slide 的 XML 元素到主 prs（一次輸出，不用 add_slide）
-                    import copy
-                    for slide in temp_prs.slides:
-                        # 深拷貝 slide 的 XML 元素
-                        slide_element = copy.deepcopy(slide._element)
-                        # 添加到主 prs 的 slide ID 列表
-                        prs.slides._sldIdLst.append(slide_element)
-                finally:
-                    # 刪除臨時文件
-                    if temp_file.exists():
-                        os.unlink(temp_file)
+                    try:
+                        # 生成臨時文件
+                        func(data_lines=data_lines, filename=str(temp_file))
+                        
+                        # 讀取臨時文件的 slide，直接移動到主 PPTX
+                        temp_prs = Presentation(str(temp_file))
+                        
+                        # 直接移動 slide 的 XML 元素到主 prs（一次輸出，不用 add_slide）
+                        import copy
+                        for slide in temp_prs.slides:
+                            # 深拷貝 slide 的 XML 元素
+                            slide_element = copy.deepcopy(slide._element)
+                            # 添加到主 prs 的 slide ID 列表
+                            prs.slides._sldIdLst.append(slide_element)
+                    finally:
+                        # 刪除臨時文件
+                        if temp_file.exists():
+                            os.unlink(temp_file)
+            except Exception as table_error:
+                # 捕獲單個表格的錯誤，提供詳細信息
+                error_msg = f"Error generating table {page_key} ({page_info['title']}): {str(table_error)}"
+                print(error_msg)
+                import traceback
+                print(f"Table {page_key} traceback:")
+                traceback.print_exc()
+                # 重新拋出錯誤，讓外層處理
+                raise Exception(error_msg) from table_error
         
         # 保存文件
         output_dir = config.OUTPUT_DIR
@@ -521,8 +531,16 @@ def generate_combined_pptx(
         return output_path
         
     except Exception as e:
-        print(f"Error generating combined PPTX: {str(e)}")
+        error_msg = f"Error generating combined PPTX: {str(e)}"
+        print(error_msg)
         import traceback
+        print("=" * 60)
+        print("Full traceback:")
         traceback.print_exc()
+        print("=" * 60)
+        # 將錯誤信息也記錄到 stderr，確保 Streamlit 能看到
+        import sys
+        sys.stderr.write(error_msg + "\n")
+        traceback.print_exc(file=sys.stderr)
         return None
 

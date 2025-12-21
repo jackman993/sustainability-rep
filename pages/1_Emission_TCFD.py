@@ -262,7 +262,13 @@ if st.button("🚀 Generate TCFD Tables", type="primary", use_container_width=Tr
             )
             
             if not output_file or not output_file.exists():
-                raise Exception("生成 PPTX 失敗")
+                # 提供更詳細的錯誤信息
+                error_detail = "生成 PPTX 失敗"
+                if output_file is None:
+                    error_detail += "：函數返回 None（請查看終端輸出中的詳細錯誤信息）"
+                elif not output_file.exists():
+                    error_detail += f"：文件不存在（預期路徑：{output_file}）"
+                raise Exception(error_detail)
             
             st.success("✅ TCFD 報告生成完成！")
             
