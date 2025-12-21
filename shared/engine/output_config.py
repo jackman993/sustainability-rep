@@ -17,7 +17,15 @@ output\{session_id}\Company_report.pptx
 """
 from pathlib import Path
 import uuid
-import streamlit as st
+
+# 延遲導入 streamlit，避免在非 Streamlit 環境中出錯
+def _get_streamlit():
+    """延遲導入 streamlit"""
+    try:
+        import streamlit as st
+        return st
+    except ImportError:
+        return None
 
 def _get_project_root() -> Path:
     """獲取項目根目錄（包含 app.py 的目錄）"""
@@ -39,9 +47,21 @@ SESSIONS_DIR = OUTPUT_ROOT  # 直接使用 output 作為會話根目錄
 
 def get_session_id():
     """獲取當前會話 ID"""
-    if 'session_id' not in st.session_state:
-        st.session_state['session_id'] = str(uuid.uuid4())
-    return st.session_state['session_id']
+    st = _get_streamlit()
+    if st is None:
+        # 非 Streamlit 環境，返回臨時 ID
+        return str(uuid.uuid4())
+    try:
+        # 確保 session_state 可用
+        if not hasattr(st, 'session_state'):
+            return str(uuid.uuid4())
+        if 'session_id' not in st.session_state:
+            st.session_state['session_id'] = str(uuid.uuid4())
+        return st.session_state['session_id']
+    except Exception as e:
+        # 如果訪問 session_state 失敗，返回臨時 ID
+        print(f"[WARNING] Failed to get session_id: {e}")
+        return str(uuid.uuid4())
 
 def get_session_output_dir():
     """獲取當前會話的輸出目錄（兩層結構：output\{session_id}）"""
