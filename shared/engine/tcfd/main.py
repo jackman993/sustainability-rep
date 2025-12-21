@@ -1,6 +1,6 @@
-﻿"""
+"""
 TCFD Main Engine
-銝駁?頛荔??矽?蔭?摰寧???銵冽??
+主邏輯：協調配置、內容生成和表格生成
 """
 import os
 import sys
@@ -10,26 +10,27 @@ from typing import Dict, List, Optional, Any
 import json
 import re
 
-from .api_client import get_client_manager, initialize_client, call_claude_api as global_call_claude_api
-
-# 直接 import 表格模組（移除動態載入）
-try:
-    from .tables import table01, table02, table03, table04, table05, table0607
-    TABLES_AVAILABLE = True
-except ImportError:
-    TABLES_AVAILABLE = False
-    table01 = table02 = table03 = table04 = table05 = table0607 = None
+from . import config
+from . import content
+from ..path_manager import get_tcfd_output_path, update_session_activity
 
 # 嘗試導入 Claude API
+try:
+    import anthropic
+    ANTHROPIC_AVAILABLE = True
+except ImportError:
+    ANTHROPIC_AVAILABLE = False
+
+
 def load_table_module(script_file: str):
     """
-    ??頛銵冽??璅∠?
+    動態載入表格生成模組
     
     Args:
-        script_file: 銵冽?單?辣??憒?'table01.py'嚗?
+        script_file: 表格腳本文件名（如 'table01.py'）
     
     Returns:
-        頛?芋蝯?鞊?
+        載入的模組對象
     """
     script_path = config.TABLES_DIR / script_file
     
@@ -51,22 +52,22 @@ def load_table_module(script_file: str):
 
 def call_claude_api(prompt: str, api_key: str, model: str = None) -> str:
     """
-    隤輻 Claude API ???批捆
+    調用 Claude API 生成內容
     
-    雿輻憭??豢芋??蝚砌??仃?停?岫銝???
+    使用多個備選模型，第一個失敗就嘗試下一個
     
     Args:
-        prompt: 摰??prompt
+        prompt: 完整的 prompt
         api_key: Anthropic API Key
-        model: Claude 璅∪??迂嚗?賂?憒?銝?靘?雿輻??”嚗?
+        model: Claude 模型名稱（可選，如果不提供則使用備選列表）
     
     Returns:
-        API 餈????砍摰?
+        API 返回的文本內容
     """
     if not ANTHROPIC_AVAILABLE:
         raise ImportError("anthropic package not installed. Install with: pip install anthropic")
     
-    # ?璅∪??”嚗??芸???嚗?
+    # 備選模型列表（按優先順序）
     model_list = [
         "claude-3-5-sonnet-20240620",
         "claude-3-opus-20240229",
@@ -74,13 +75,13 @@ def call_claude_api(prompt: str, api_key: str, model: str = None) -> str:
         "claude-3-haiku-20240307"
     ]
     
-    # 憒???鈭芋???芸?雿輻
+    # 如果指定了模型，優先使用
     if model:
         model_list = [model] + [m for m in model_list if m != model]
     
     client = anthropic.Anthropic(api_key=api_key)
     
-    # ?岫瘥芋???游??
+    # 嘗試每個模型，直到成功
     last_error = None
     for model_name in model_list:
         try:
@@ -94,80 +95,80 @@ def call_claude_api(prompt: str, api_key: str, model: str = None) -> str:
             return message.content[0].text
         except Exception as e:
             last_error = e
-            # 憒??舀芋??摮?隤歹??岫銝??芋??
+            # 如果是模型不存在的錯誤，嘗試下一個模型
             if "not_found_error" in str(e) or "404" in str(e):
                 continue
-            # ?嗡??航炊?湔?
+            # 其他錯誤直接拋出
             raise
     
-    # ??芋?憭望?
+    # 所有模型都失敗
     raise Exception(f"All models failed. Last error: {str(last_error)}")
 
 
 def parse_llm_response(response: str) -> List[str]:
     """
-    閫?? LLM 餈??摰對???銵冽銵???芸??嚗撥??||| ?澆?嚗?
+    解析 LLM 返回的內容，提取表格行數據（優化版本，強制 ||| 格式）
     
     Args:
-        response: LLM 餈?????
+        response: LLM 返回的文本
     
     Returns:
-        銵冽?批捆?”嚗?銵 ||| ????蝚虫葡嚗?
+        表格內容列表（每行是 ||| 分隔的字符串）
     """
     lines = []
-    # 撠? ||| ??蝚衣?銵??芸?嚗?
+    # 尋找包含 ||| 分隔符的行（優先）
     for line in response.split('\n'):
         line = line.strip()
         if '|||' in line:
-            # 皜??航?楊??蝬湛?憒?"Line 1:", "1.", 蝑?
+            # 清理可能的編號前綴（如 "Line 1:", "1.", 等）
             cleaned = re.sub(r'^(Line\s*\d+[:.]?\s*|^\d+[.:]\s*)', '', line, flags=re.IGNORECASE)
             if cleaned.strip():
                 lines.append(cleaned.strip())
     
-    # 憒?瘝??曉 ||| ????嚗?閰血隞撘?
+    # 如果沒有找到 ||| 分隔的行，嘗試其他格式
     if not lines:
-        # ?岫撠?”?澆?
+        # 嘗試尋找列表格式
         for line in response.split('\n'):
             line = line.strip()
-            if line and (line.startswith('-') or line.startswith('??) or re.match(r'^\d+\.', line)):
-                # ?岫閫???箄”?潭撘?
-                cleaned = re.sub(r'^[-??-9. ]+', '', line)
+            if line and (line.startswith('-') or line.startswith('•') or re.match(r'^\d+\.', line)):
+                # 嘗試解析為表格格式
+                cleaned = re.sub(r'^[-•0-9. ]+', '', line)
                 if cleaned:
                     lines.append(cleaned)
     
-    # 憒??瘝?嚗???憪??蝚砌??典?嚗溶??||| ??蝚佗?
+    # 如果還是沒有，返回原始響應的第一部分（添加 ||| 分隔符）
     if not lines:
-        # ?岫敺?憪?葉????00摮泵嚗蒂瘛餃???蝚?
+        # 嘗試從原始響應中提取前200字符，並添加分隔符
         first_part = response[:200].strip()
         if first_part:
             lines.append(first_part + " ||| N/A ||| N/A")
         else:
             lines.append("N/A ||| N/A ||| N/A")
     
-    # 餈??憭?10 銵??虜?芷?閬?2 銵?
+    # 返回最多 10 行（通常只需要 2 行）
     return lines[:10]
 
 
 def generate_mock_data(prompt_id: str, industry: str = None, carbon_emission: Dict[str, Any] = None) -> List[str]:
     """
-    ??璅⊥?豢?嚗?潭葫閰佗?
+    生成模擬數據（用於測試）
     
     Args:
         prompt_id: Prompt ID
-        industry: ?Ｘ平?迂
-        carbon_emission: 蝣單??暹??
+        industry: 產業名稱
+        carbon_emission: 碳排放數據
     
     Returns:
-        璅⊥?”?澆摰孵?銵?
+        模擬的表格內容列表
     """
     industry = industry or "Manufacturing"
     
-    # ?寞?銝??”?潮???????璅⊥?豢?嚗????詨???撖漲嚗?
+    # 根據不同的表格類型生成不同的模擬數據（增加行數和文字密度）
     if 'trans' in prompt_id:
         return [
-            # Line 1: Policy & Regulation Risk (撠? Row 2) - 閰喟敦?
+            # Line 1: Policy & Regulation Risk (對應 Row 2) - 詳細版本
             f"Policy & Regulation Risk;{industry} sector faces comprehensive regulatory changes including new carbon tax regulations, stricter environmental compliance requirements, and sector-specific emission standards. Government policies mandate 30% emission reduction by 2030, requiring immediate action. Additional regulations include product certification requirements, supply chain transparency mandates, and environmental permit restrictions. Compliance deadlines are approaching with enforcement mechanisms including fines, operational restrictions, and market access limitations ||| Financial Impact: $500K-1M annually in carbon taxes, plus $200K-400K in compliance costs including monitoring systems, reporting, and certification fees. Potential penalties up to $500K for non-compliance. Additional costs include $300K-600K for process modifications and $150K-300K for staff training. Total first-year compliance cost estimated at $1.5M-2.5M ||| Mitigation: Invest in carbon offset programs ($200K initial) and energy efficiency upgrades ($500K). Implement comprehensive compliance monitoring system ($300K). Establish regulatory tracking and reporting framework ($150K). Develop compliance training programs ($100K). Budget: $1.25M initial investment, $350K annually for maintenance, monitoring, and ongoing compliance",
-            # Line 2: Green Product & Technology Risk (撠? Row 3) - 閰喟敦?
+            # Line 2: Green Product & Technology Risk (對應 Row 3) - 詳細版本
             f"Green Product & Technology Risk;Significant technology disruption in {industry} sector with shift to green technologies, sustainable materials, and low-carbon production processes. Competitors adopting advanced green technologies including renewable energy systems, circular economy solutions, and digital automation gaining competitive advantage. Emerging technologies such as AI-driven efficiency optimization, blockchain for supply chain transparency, and advanced recycling processes transforming {industry} operations ||| Financial Impact: Technology obsolescence risk $1M-2M for existing equipment. Critical need for R&D investment $1.5M-3M to stay competitive. Market share erosion 10-15% if no action, representing $2M-4M revenue risk. Additional costs include $800K-1.2M for new equipment, $400K-600K for technology integration, and $200K-400K for staff retraining. ROI from technology adoption estimated at 15-25% over 5 years ||| Mitigation: Accelerate green technology R&D program ($1.5M over 3 years). Develop sustainable product lines ($800K). Establish strategic partnerships with green tech suppliers ($200K). Implement technology pilot programs ($300K). Create innovation lab for testing new technologies ($400K). Budget: $3.2M total investment over 3 years, $600K annually for R&D and technology maintenance"
         ]
     elif 'physical' in prompt_id:
@@ -214,7 +215,7 @@ def generate_mock_data(prompt_id: str, industry: str = None, carbon_emission: Di
             f"Financial Resilience;Build financial reserves and risk management capabilities to withstand climate-related financial impacts. Develop insurance and risk transfer strategies ||| Stressor: Climate-related financial losses from disruptions. Increased insurance costs. Market volatility affecting financial stability ||| Impact: Financial losses from climate events. Increased costs reducing profitability. Need for financial buffer and risk management ||| Action: Develop financial risk management strategies and insurance programs. Build financial reserves for climate contingencies. Budget: $400K for risk management, $150K annually for insurance and reserves"
         ]
     else:
-        # 暺?璅⊥?豢?
+        # 默認模擬數據
         return [
             f"{industry} Item A;Detail 1 ||| Impact $100K ||| Action Plan A;Budget $50K",
             f"{industry} Item B;Detail 2 ||| Impact $200K ||| Action Plan B;Budget $80K"
@@ -231,21 +232,21 @@ def generate_table_content(
     use_mock: bool = False
 ) -> List[str]:
     """
-    ??銵冽?批捆嚗矽??LLM ?蝙?冽芋?祆??
+    生成表格內容（調用 LLM 或使用模擬數據）
     
     Args:
-        prompt_id: Prompt ID嚗? 'prompt_table_1_trans'嚗?
-        industry: ?Ｘ平?迂
-        revenue: ?
-        carbon_emission: 蝣單??暹????
-        llm_api_key: LLM API Key嚗?賂?
-        llm_provider: LLM ?????舫嚗? 'anthropic'嚗?
-        use_mock: ?臬雿輻璅⊥?豢?嚗rue = Mock, False = ?岫 API嚗?
+        prompt_id: Prompt ID（如 'prompt_table_1_trans'）
+        industry: 產業名稱
+        revenue: 營收
+        carbon_emission: 碳排放數據字典
+        llm_api_key: LLM API Key（可選）
+        llm_provider: LLM 提供商（可選，如 'anthropic'）
+        use_mock: 是否使用模擬數據（True = Mock, False = 嘗試 API）
     
     Returns:
-        銵冽?批捆?”嚗?銵 ||| ????蝚虫葡嚗?
+        表格內容列表（每行是 ||| 分隔的字符串）
     """
-    # 瑽遣摰 prompt
+    # 構建完整 prompt
     full_prompt = content.get_prompt(
         prompt_id=prompt_id,
         industry=industry,
@@ -253,21 +254,21 @@ def generate_table_content(
         carbon_emission=carbon_emission
     )
     
-    # 憒??Ⅱ閬?雿輻 Mock嚗?瘝??? API Key嚗蝙?冽芋?祆??
+    # 如果明確要求使用 Mock，或沒有提供 API Key，使用模擬數據
     if use_mock or not llm_api_key or not llm_provider:
         return generate_mock_data(prompt_id, industry, carbon_emission)
     
-    # ?岫隤輻 LLM API
+    # 嘗試調用 LLM API
     try:
         if llm_provider.lower() == 'anthropic' or llm_provider.lower() == 'claude':
             response = call_claude_api(full_prompt, llm_api_key)
             return parse_llm_response(response)
         else:
-            # 銝??????雿輻 Mock
+            # 不支持的提供商，使用 Mock
             return generate_mock_data(prompt_id, industry, carbon_emission)
     except Exception as e:
         print(f"Error calling LLM API: {str(e)}")
-        # API 隤輻憭望?嚗????Mock
+        # API 調用失敗，回退到 Mock
         return generate_mock_data(prompt_id, industry, carbon_emission)
 
 
@@ -282,19 +283,19 @@ def generate_table(
     use_mock: bool = False
 ) -> Optional[Path]:
     """
-    ???桀?TCFD 銵冽
+    生成單個 TCFD 表格
     
     Args:
-        page_key: ??蛛?憒?'page_1'嚗?
-        output_dir: 頛詨?桅?嚗?隤 config.OUTPUT_DIR嚗?
-        industry: ?Ｘ平?迂
-        revenue: ?
-        carbon_emission: 蝣單??暹??
+        page_key: 頁面鍵（如 'page_1'）
+        output_dir: 輸出目錄（默認為 config.OUTPUT_DIR）
+        industry: 產業名稱
+        revenue: 營收
+        carbon_emission: 碳排放數據
         llm_api_key: LLM API Key
-        llm_provider: LLM ????
+        llm_provider: LLM 提供商
     
     Returns:
-        ????PowerPoint ?辣頝臬?嚗仃????None
+        生成的 PowerPoint 文件路徑，失敗返回 None
     """
     if page_key not in config.TCFD_PAGES:
         raise ValueError(f"Invalid page_key: {page_key}")
@@ -304,11 +305,11 @@ def generate_table(
     output_dir.mkdir(exist_ok=True)
     
     try:
-        # 1. 頛銵冽??璅∠?
+        # 1. 載入表格生成模組
         table_module = load_table_module(page_info['script_file'])
         
-        # 2. ??銵冽?批捆
-        # 憒?瘝??Ⅱ?? use_mock嚗??寞??臬??API key 瘙箏?
+        # 2. 生成表格內容
+        # 如果沒有明確指定 use_mock，則根據是否有 API key 決定
         if use_mock is None:
             use_mock = (not llm_api_key or not llm_provider)
         
@@ -322,7 +323,7 @@ def generate_table(
             use_mock=use_mock
         )
         
-        # 3. 隤輻銵冽???賣
+        # 3. 調用表格生成函數
         entry_func_name = page_info['entry_function']
         
         if not hasattr(table_module, entry_func_name):
@@ -332,12 +333,12 @@ def generate_table(
         
         func = getattr(table_module, entry_func_name)
         
-        # 4. 閮剖?頛詨瑼?
+        # 4. 設定輸出檔名
         safe_script_name = page_info['script_file'].replace('.py', '')
         out_filename = f"TCFD_{page_key}_{safe_script_name}.pptx"
         out_path = output_dir / out_filename
         
-        # 5. ??銵冽嚗?交??摰頝臬?嚗?
+        # 5. 生成表格（傳入數據和完整路徑）
         func(data_lines, filename=str(out_path))
         
         return out_path
@@ -356,18 +357,18 @@ def generate_all_tables(
     llm_provider: str = None
 ) -> Dict[str, Optional[Path]]:
     """
-    ?????TCFD 銵冽
+    生成所有 TCFD 表格
     
     Args:
-        output_dir: 頛詨?桅?
-        industry: ?Ｘ平?迂
-        revenue: ?
-        carbon_emission: 蝣單??暹??
+        output_dir: 輸出目錄
+        industry: 產業名稱
+        revenue: 營收
+        carbon_emission: 碳排放數據
         llm_api_key: LLM API Key
-        llm_provider: LLM ????
+        llm_provider: LLM 提供商
     
     Returns:
-        摮嚗page_key: ?辣頝臬?}
+        字典：{page_key: 文件路徑}
     """
     results = {}
     
@@ -396,49 +397,53 @@ def generate_combined_pptx(
     use_mock: bool = False
 ) -> Optional[Path]:
     """
-    ?????”?潛??桀?PPTX ?辣
+    生成包含所有表格的單個 PPTX 文件
     
-    蝯曹????摩嚗?
-    - table0607 (page_6, page_7): ?亙? prs ?嚗?交溶?銝?PPTX
-    - table01-05 (page_1 ??page_5): ?萄遣?唳?隞塚??嗅?銴ˊ slide
+    統一處理邏輯：
+    - table0607 (page_6, page_7): 接受 prs 參數，直接添加到主 PPTX
+    - table01-05 (page_1 到 page_5): 創建新文件，然後複製 slide
     
     Args:
-        output_filename: 頛詨?辣??
-        template_path: 璅⊥?辣頝臬?嚗anddrawppt.pptx嚗?
-        industry: ?Ｘ平?迂
-        revenue: ?
-        carbon_emission: 蝣單??暹??
+        output_filename: 輸出文件名（已棄用，現在使用 path_manager 的標準文件名）
+        template_path: 模板文件路徑（handdrawppt.pptx）
+        industry: 產業名稱
+        revenue: 營收
+        carbon_emission: 碳排放數據
         llm_api_key: LLM API Key
-        llm_provider: LLM ????
-        use_mock: ?臬雿輻璅⊥?豢?
+        llm_provider: LLM 提供商
+        use_mock: 是否使用模擬數據
     
     Returns:
-        ????PowerPoint ?辣頝臬?
+        生成的 PowerPoint 文件路徑（位於 output/{session_id}/TCFD_table.pptx）
+        
+    Note:
+        輸出路徑現在通過 path_manager.get_tcfd_output_path() 統一管理，
+        自動包含 session_id，並會更新會話活動時間。
     """
     try:
         from pptx import Presentation
         import tempfile
         import os
         
-        # 頛璅⊥
+        # 載入模板
         if template_path and template_path.exists():
             prs = Presentation(str(template_path))
         else:
-            # 雿輻暺?璅⊥頝臬?
+            # 使用默認模板路徑
             default_template = config.BASE_DIR / "handdrawppt.pptx"
             if default_template.exists():
                 prs = Presentation(str(default_template))
             else:
                 prs = Presentation()
         
-        # ?芷璅⊥銝剔????閮?slide嚗?征?賡?嚗?
-        # ???銝甈∟撓????銝?閬芋?輻??身?
+        # 刪除模板中的所有預設 slide（避免空白頁）
+        # 因為我們要一次輸出7頁，不需要模板的預設頁面
         while len(prs.slides) > 0:
             rId = prs.slides._sldIdLst[0].rId
             prs.part.drop_rel(rId)
             del prs.slides._sldIdLst[0]
         
-        # ??摨????”??
+        # 按順序生成每個表格
         slide_order = ['page_1', 'page_2', 'page_3', 'page_4', 'page_5', 'page_6', 'page_7']
         
         for page_key in slide_order:
@@ -447,16 +452,16 @@ def generate_combined_pptx(
             
             page_info = config.TCFD_PAGES[page_key]
             
-            # 頛銵冽??璅∠?
+            # 載入表格生成模組
             table_module = load_table_module(page_info['script_file'])
             func = getattr(table_module, page_info['entry_function'])
             
-            # 瑼Ｘ?賣蝪賢?
+            # 檢查函數簽名
             import inspect
             sig = inspect.signature(func)
             has_prs_param = 'prs' in sig.parameters
             
-            # ??銵冽?批捆嚗??”?潮?閬?
+            # 生成表格內容（所有表格都需要）
             data_lines = generate_table_content(
                 prompt_id=page_info['prompt_id'],
                 industry=industry,
@@ -467,58 +472,60 @@ def generate_combined_pptx(
                 use_mock=use_mock
             )
             
-            # 蝯曹???嚗???豢??prs ?嚗?亙?伐??血?雿輻?冽??辣
+            # 統一處理：如果函數接受 prs 參數，直接傳入；否則使用臨時文件
             try:
                 if has_prs_param:
-                    # ?賣?亙? prs ?嚗?交溶?銝?PPTX嚗?甈∟撓?綽?銝 add_slide嚗?
-                    # 瑼Ｘ?臬??閬?data_lines ?
+                    # 函數接受 prs 參數，直接添加到主 PPTX（一次輸出，不用 add_slide）
+                    # 檢查是否還需要 data_lines 參數
                     if 'data_lines' in sig.parameters:
                         func(prs=prs, data_lines=data_lines)
                     else:
                         func(prs=prs)
                 else:
-                    # ?賣銝??prs ?嚗蝙?刻??隞塚????澆捆嚗?
+                    # 函數不接受 prs 參數，使用臨時文件（向後兼容）
                     with tempfile.NamedTemporaryFile(suffix='.pptx', delete=False) as tmp:
                         temp_file = Path(tmp.name)
                     
                     try:
-                        # ???冽??辣
+                        # 生成臨時文件
                         func(data_lines=data_lines, filename=str(temp_file))
                         
-                        # 霈???隞嗥? slide嚗?亦宏?銝?PPTX
+                        # 讀取臨時文件的 slide，直接移動到主 PPTX
                         temp_prs = Presentation(str(temp_file))
                         
-                        # ?湔蝘餃? slide ??XML ???唬蜓 prs嚗?甈∟撓?綽?銝 add_slide嚗?
+                        # 直接移動 slide 的 XML 元素到主 prs（一次輸出，不用 add_slide）
                         import copy
                         for slide in temp_prs.slides:
-                            # 瘛望鞎?slide ??XML ??
+                            # 深拷貝 slide 的 XML 元素
                             slide_element = copy.deepcopy(slide._element)
-                            # 瘛餃??唬蜓 prs ??slide ID ?”
+                            # 添加到主 prs 的 slide ID 列表
                             prs.slides._sldIdLst.append(slide_element)
                     finally:
-                        # ?芷?冽??辣
+                        # 刪除臨時文件
                         if temp_file.exists():
                             os.unlink(temp_file)
             except Exception as table_error:
-                # ??桀”?潛??航炊嚗?靘底蝝唬縑??
+                # 捕獲單個表格的錯誤，提供詳細信息
                 error_msg = f"Error generating table {page_key} ({page_info['title']}): {str(table_error)}"
                 print(error_msg)
                 import traceback
                 print(f"Table {page_key} traceback:")
                 traceback.print_exc()
-                # ???航炊嚗?憭惜??
+                # 重新拋出錯誤，讓外層處理
                 raise Exception(error_msg) from table_error
         
-        # 靽??辣 - tcfd 撘??函???嚗?靘陷 shared 撘?
+        # 保存文件 - 使用統一的路徑管理器
         import streamlit as st
-        import uuid
-        from pathlib import Path
-        # ?湔閮?頝臬?嚗? main.py ?????圈??格?桅?
-        output_dir = Path(__file__).resolve().parent.parent.parent.parent / "output"
-        session_id = st.session_state.setdefault('session_id', str(uuid.uuid4()))
-        output_path = output_dir / session_id / output_filename
+        # 使用統一的 path_manager 獲取輸出路徑（包含 session_id）
+        output_path = get_tcfd_output_path()
+        # 確保目錄存在
         output_path.parent.mkdir(parents=True, exist_ok=True)
+        # 保存文件
         prs.save(str(output_path))
+        # 更新會話活動時間（用於會話清理）
+        update_session_activity()
+        # 保存路徑到 session_state（供其他模組讀取）
+        st.session_state["tcfd_report_file"] = str(output_path)
         return output_path
         
     except Exception as e:
@@ -529,7 +536,7 @@ def generate_combined_pptx(
         print("Full traceback:")
         traceback.print_exc()
         print("=" * 60)
-        # 撠隤支縑?臭?閮???stderr嚗Ⅱ靽?Streamlit ?賜???
+        # 將錯誤信息也記錄到 stderr，確保 Streamlit 能看到
         import sys
         sys.stderr.write(error_msg + "\n")
         traceback.print_exc(file=sys.stderr)
