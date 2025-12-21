@@ -80,8 +80,37 @@ def get_tcfd_output_path() -> Path:
 
 def get_environment_output_path() -> Path:
     """獲取 Environment 報告輸出路徑（兩層結構：output/{session_id}/Environment_report.pptx）"""
-    session_dir = get_step_output_dir('environment')  # 現在直接返回會話目錄
-    return session_dir / OUTPUT_FILENAMES['environment']
+    try:
+        print("[DIAGNOSIS] ========== Environment 路徑診斷開始 ==========")
+        print("[DEBUG] Getting Environment output path...")
+        session_dir = get_step_output_dir('environment')  # 現在直接返回會話目錄
+        print(f"[DIAGNOSIS] Session directory: {session_dir}")
+        print(f"[DIAGNOSIS] Session directory (absolute): {session_dir.resolve()}")
+        print(f"[DIAGNOSIS] Session directory 是否存在: {session_dir.exists()}")
+        print(f"[DIAGNOSIS] Session directory 是否可寫: {os.access(session_dir, os.W_OK) if session_dir.exists() else False}")
+        output_path = session_dir / OUTPUT_FILENAMES['environment']
+        print(f"[DIAGNOSIS] Output path: {output_path}")
+        print(f"[DIAGNOSIS] Output path (absolute): {output_path.resolve()}")
+        print(f"[DIAGNOSIS] Output path 父目錄是否存在: {output_path.parent.exists()}")
+        print(f"[DIAGNOSIS] Output path 父目錄是否可寫: {os.access(output_path.parent, os.W_OK) if output_path.parent.exists() else False}")
+        print("[DIAGNOSIS] ========== Environment 路徑診斷結束 ==========")
+        return output_path
+    except Exception as e:
+        error_msg = f"[ERROR] Failed to get Environment output path: {str(e)}"
+        print(error_msg)
+        import traceback
+        full_traceback = traceback.format_exc()
+        print(full_traceback)
+        # 嘗試在 Streamlit UI 中顯示錯誤
+        try:
+            st = _get_streamlit()
+            if st is not None:
+                st.error(f"❌ 獲取 Environment 輸出路徑失敗: {str(e)}")
+                with st.expander("詳細錯誤信息", expanded=False):
+                    st.code(full_traceback)
+        except:
+            pass
+        raise Exception(error_msg) from e
 
 def update_session_activity():
     """更新會話最後活動時間（通過更新目錄修改時間）"""
