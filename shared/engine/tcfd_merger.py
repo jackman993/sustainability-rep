@@ -21,7 +21,7 @@ def insert_tcfd_slides(env_prs: Presentation, insert_position: int = 5) -> Prese
     Returns:
         合併後的 Presentation 對象
     """
-    # 獲取 TCFD 報告路徑
+    # 獲取 TCFD 報告路徑（優先從內存/session_state）
     tcfd_path = get_tcfd_report_path()
     if not tcfd_path or not tcfd_path.exists():
         raise FileNotFoundError(f"找不到 TCFD 報告: {tcfd_path}")
@@ -29,7 +29,11 @@ def insert_tcfd_slides(env_prs: Presentation, insert_position: int = 5) -> Prese
     logger.info(f"讀取 TCFD 報告: {tcfd_path}")
     
     # 讀取 TCFD 報告
-    tcfd_prs = Presentation(str(tcfd_path))
+    try:
+        tcfd_prs = Presentation(str(tcfd_path))
+    except Exception as e:
+        logger.error(f"讀取 TCFD 報告失敗: {e}")
+        raise
     
     # 更新活動時間
     update_session_activity()

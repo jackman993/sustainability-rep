@@ -1,0 +1,63 @@
+"""
+ESG 環境篇 PPTX 報告生成器 - 主程式
+"""
+from environment_pptx import EnvironmentPPTXEngine
+from config import ENVIRONMENT_CONFIG
+from datetime import datetime
+import os
+
+
+def main(test_mode=False):
+    """
+    主程式
+    test_mode: True = 跳過 API 呼叫，快速測試版面
+    """
+    
+    # 確保 output 資料夾存在
+    os.makedirs("output", exist_ok=True)
+    
+    # 模板路徑（可選，預設使用 assets/handdrawppt.pptx）
+    template_path = None  # None = 使用預設模板 (assets/handdrawppt.pptx)
+    
+    # 檢查模板是否存在（如果指定了自訂路徑）
+    if template_path and os.path.exists(template_path):
+        print(f"使用自訂模板：{template_path}")
+    elif template_path:
+        print(f"⚠ 自訂模板不存在：{template_path}，將使用預設模板")
+        template_path = None
+    else:
+        # 使用預設模板
+        default_template = os.path.join(os.path.dirname(__file__), "assets", "handdrawppt.pptx")
+        if os.path.exists(default_template):
+            print(f"使用預設模板：{default_template}")
+            template_path = default_template
+        else:
+            print("⚠ 預設模板不存在，使用空白版面")
+            template_path = None
+    
+    # 生成環境篇報告
+    engine = EnvironmentPPTXEngine(template_path=template_path, test_mode=test_mode)
+    report = engine.generate()
+    
+    # 儲存檔案
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"output/ESG環境篇_{timestamp}.pptx"
+    
+    engine.save(filename)
+    
+    print(f"\n✓ 環境篇 PPTX 報告已儲存：{filename}")
+    print(f"✓ 章節：{ENVIRONMENT_CONFIG['chapter_title']}")
+    print(f"✓ 總頁數：{len(report.slides)} 頁")
+    print("\n完成！")
+
+
+if __name__ == "__main__":
+    import sys
+    # 使用 --test 參數啟用測試模式
+    test_mode = "--test" in sys.argv
+    if test_mode:
+        print("=" * 50)
+        print("🧪 測試模式：跳過 Claude API 呼叫")
+        print("=" * 50)
+    main(test_mode=test_mode)
+

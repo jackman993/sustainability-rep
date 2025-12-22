@@ -744,16 +744,22 @@ def generate_combined_pptx(
             except:
                 pass
         
-        # 保存路徑到 session_state（供其他模組讀取）
+        # 保存文件內容到 session_state（內存儲存方案）
         try:
-            print("[DEBUG] Step 5: 保存路徑到 session_state...")
-            st.session_state["tcfd_report_file"] = str(output_path)
-            print(f"[DEBUG] Step 5 成功: {st.session_state.get('tcfd_report_file')}")
+            print("[DEBUG] Step 5: 保存文件內容到 session_state（內存）...")
+            # 讀取文件內容為 bytes
+            with open(save_path, 'rb') as f:
+                file_bytes = f.read()
+            
+            # 保存到 session_state
+            st.session_state["tcfd_report_bytes"] = file_bytes
+            st.session_state["tcfd_report_file"] = str(output_path)  # 保留路徑作為備用
+            print(f"[DEBUG] Step 5 成功: 文件大小 {len(file_bytes)} bytes，已保存到 session_state")
         except Exception as state_error:
             # session_state 保存失敗不影響主流程，只記錄警告
-            print(f"[WARNING] Failed to save path to session_state: {str(state_error)}")
+            print(f"[WARNING] Failed to save file to session_state: {str(state_error)}")
             try:
-                st.warning(f"⚠️ 保存路徑到 session_state 失敗: {str(state_error)}")
+                st.warning(f"⚠️ 保存文件到 session_state 失敗: {str(state_error)}")
             except:
                 pass
         
