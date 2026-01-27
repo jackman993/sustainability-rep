@@ -16,6 +16,7 @@ if str(project_root) not in sys.path:
 from shared.engine.carbon import render_calculator
 from shared.ui.sidebar_config import render_sidebar_config
 from shared.agents.data_broker import DataBroker
+from shared.config.api_keys import get_claude_api_key
 
 # TCFD 模組導入 - 延遲導入，避免頁面崩潰
 TCFD_AVAILABLE = False
@@ -81,8 +82,8 @@ with tab2:
     
     st.divider()
     
-    # API Key 狀態檢查
-    api_key = st.session_state.get("claude_api_key")
+    # API Key 狀態檢查（統一透過 get_claude_api_key 取得）
+    api_key = get_claude_api_key()
     if api_key:
         masked_key = api_key[:8] + "..." + api_key[-4:] if len(api_key) > 12 else "***"
         st.info(f"ℹ️ **API Key**: ✅ 已配置 ({masked_key})")
@@ -122,8 +123,8 @@ with tab2:
         # 確保導入 generate_combined_pptx
         from shared.engine.tcfd import generate_combined_pptx
         
-        # 獲取 API Key（必須配置）
-        api_key = st.session_state.get("claude_api_key") or ""
+        # 統一取得 API Key（必須配置）
+        api_key = get_claude_api_key() or ""
         
         # 調試信息
         print(f"[DEBUG] api_key exists: {bool(api_key)}")
@@ -419,8 +420,8 @@ if st.button("🚀 Generate TCFD Tables", type="primary", use_container_width=Tr
     # 確保導入 generate_combined_pptx
     from shared.engine.tcfd import generate_combined_pptx
     
-    # 獲取 API Key（必須配置）
-    api_key = st.session_state.get("claude_api_key") or ""
+    # 統一取得 API Key（必須配置）
+    api_key = get_claude_api_key() or ""
     
     # 如果沒有 API Key，顯示錯誤並停止
     if not api_key:
