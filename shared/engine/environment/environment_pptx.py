@@ -807,7 +807,23 @@ class EnvironmentPPTXEngine:
         
         # Right side: Emission table (reduced 50%, right-aligned)
         # This will use the emission_data set above from step1
-        create_emission_table_on_slide_right(section_slide)
+        if create_emission_table_on_slide_right is not None:
+            try:
+                create_emission_table_on_slide_right(section_slide)
+            except Exception as e:
+                print(f"  ⚠ Unable to create emission table on slide: {e}")
+        else:
+            # 如果無法載入 emission_pptx，就在右側放一段提示文字，避免整個報告失敗
+            self._add_text_box(
+                section_slide,
+                "[Emission Table Placeholder]\n\nEmission table component (emission_pptx) is not available in this deployment. "
+                "Please ensure the emission_pptx module is deployed correctly if you want to show the detailed carbon inventory table.",
+                left=RIGHT_CONTENT_LEFT,
+                top=CONTENT_TOP,
+                width=CONTENT_WIDTH,
+                height=CONTENT_HEIGHT,
+                font_size=Pt(10),
+            )
         
         # Page 14: Electricity Usage and Energy Conservation Policy (using emission pie chart)
         electricity_text = self.content_engine.generate_electricity_policy(self.config)
