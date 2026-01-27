@@ -522,7 +522,7 @@ Please write a concise summary in English, approximately 250 words, that highlig
             # 4. Show download button
             with open(output_file, "rb") as f:
                 st.download_button(
-                    "📥 下載 TCFD 報告 (TCFD_table.pptx)",
+                    "📥 Download TCFD Report (TCFD_table.pptx)",
                     data=f.read(),
                     file_name="TCFD_table.pptx",
                     mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
