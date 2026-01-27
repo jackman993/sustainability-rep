@@ -128,9 +128,18 @@ with tab2:
         # 獲取 API Key（從 sidebar）
         api_key = st.session_state.get("claude_api_key") or ""
         
+        # 調試信息
+        print(f"[DEBUG] data_source: {data_source}")
+        print(f"[DEBUG] use_api: {use_api}")
+        print(f"[DEBUG] api_key exists: {bool(api_key)}")
+        print(f"[DEBUG] api_key length: {len(api_key) if api_key else 0}")
+        print(f"[DEBUG] api_key_locked: {st.session_state.get('api_key_locked', False)}")
+        
         # 如果選擇 Claude API 但沒有 API Key，顯示警告
         if use_api and not api_key:
-            st.warning("⚠️ Please enter Claude API Key in sidebar or select Mock Data")
+            st.error(f"❌ API Key 未找到！")
+            st.info(f"**調試信息**: data_source={data_source}, use_api={use_api}, api_key_exists={bool(api_key)}")
+            st.info("💡 請檢查 sidebar 中的 API Configuration，確保 API Key 已正確配置")
             st.stop()
         
         # 創建進度顯示
@@ -155,14 +164,23 @@ Revenue: {revenue_str}
 The report contains 7 tables covering: Transformation Risks, Physical Risks, Opportunities (Resource & Energy Efficiency, Products & Services), Metrics and Targets, Systemic Risk Control, and Operational Resilience.
 
 Please write a concise summary in English, approximately 250 words, that highlights the key climate risks, opportunities, and strategic recommendations for the {industry} industry based on the TCFD framework analysis."""
+                    print(f"[DEBUG] 調用 Claude API 生成摘要，API Key 長度: {len(api_key)}")
                     summary = call_claude_api(summary_prompt, api_key)
+                    print(f"[DEBUG] Claude API 調用成功，摘要長度: {len(summary)}")
                     summary = summary.split('\n\n')[0].strip()
                     if len(summary.split()) > 300:
                         words = summary.split()[:250]
                         summary = ' '.join(words) + "..."
+                    st.success("✅ LLM 摘要生成成功")
                 except Exception as e:
+                    error_msg = str(e)
+                    print(f"[ERROR] Claude API 調用失敗: {error_msg}")
+                    import traceback
+                    traceback.print_exc()
                     summary = f"This TCFD climate risk report provides a comprehensive analysis for the {industry} industry. The report includes 7 tables covering transformation risks, physical risks, opportunities, metrics and targets, systemic risk control, and operational resilience. Based on current carbon emission data (Total: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e) and revenue data ({revenue_str}), this report offers strategic insights for climate risk management and sustainable development."
-                    st.warning(f"Summary generation failed, using default summary: {str(e)}")
+                    st.error(f"❌ LLM 調用失敗: {error_msg}")
+                    st.info("💡 請檢查：1) API Key 是否正確 2) 網絡連接 3) 查看終端輸出中的詳細錯誤信息")
+                    # 不停止執行，使用默認摘要繼續
             else:
                 api_key_for_summary = st.session_state.get("claude_api_key") or ""
                 if api_key_for_summary:

@@ -79,12 +79,23 @@ def call_claude_api(prompt: str, api_key: str, model: str = None) -> str:
     if model:
         model_list = [model] + [m for m in model_list if m != model]
     
+    # 驗證 API Key
+    if not api_key:
+        raise ValueError("API Key 為空，無法調用 Claude API")
+    
+    if not api_key.startswith("sk-ant-"):
+        raise ValueError(f"API Key 格式不正確，應以 'sk-ant-' 開頭，當前: {api_key[:10]}...")
+    
+    print(f"[DEBUG] 調用 Claude API，模型列表: {model_list}")
+    print(f"[DEBUG] API Key 前綴: {api_key[:15]}...")
+    
     client = anthropic.Anthropic(api_key=api_key)
     
     # 嘗試每個模型，直到成功
     last_error = None
     for model_name in model_list:
         try:
+            print(f"[DEBUG] 嘗試模型: {model_name}")
             message = client.messages.create(
                 model=model_name,
                 max_tokens=2000,
@@ -92,12 +103,18 @@ def call_claude_api(prompt: str, api_key: str, model: str = None) -> str:
                     {"role": "user", "content": prompt}
                 ]
             )
+            print(f"[DEBUG] 模型 {model_name} 調用成功")
             return message.content[0].text
         except Exception as e:
             last_error = e
+            error_msg = str(e)
+            print(f"[ERROR] 模型 {model_name} 調用失敗: {error_msg}")
             # 如果是模型不存在的錯誤，嘗試下一個模型
-            if "not_found_error" in str(e) or "404" in str(e):
+            if "not_found_error" in error_msg or "404" in error_msg:
                 continue
+            # 如果是認證錯誤，直接拋出
+            if "401" in error_msg or "authentication" in error_msg.lower() or "invalid_api_key" in error_msg.lower():
+                raise Exception(f"API Key 認證失敗: {error_msg}")
             # 其他錯誤直接拋出
             raise
     

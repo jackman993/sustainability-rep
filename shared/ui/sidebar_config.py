@@ -40,14 +40,27 @@ def render_sidebar_config():
                 print(f"[API_KEY] 未找到 secrets 或環境變數")
         
         # Data Source Selection (簡化版：只有 Mock 和 API 兩個選項)
-        data_source = st.radio(
-            "Data Source",
-            options=["Mock Data", "Claude API"],
-            index=0,
-            help="Mock Data: 使用模擬數據（無需 API Key）\nClaude API: 使用 Claude API 生成內容（需要 API Key）",
-            key="sidebar_data_source"
-        )
-        st.session_state.data_source = data_source
+        # 如果 API Key 已自動配置，強制使用 Claude API
+        if st.session_state.get("api_key_locked", False) and st.session_state.get("claude_api_key"):
+            # API Key 已配置，強制使用 Claude API
+            st.session_state.data_source = "Claude API"
+            data_source = "Claude API"
+            st.info("💡 API Key 已自動配置，已切換到 Claude API 模式")
+        else:
+            # 沒有 API Key，允許選擇
+            default_index = 0
+            if "data_source" in st.session_state:
+                # 保持用戶之前的選擇
+                default_index = 1 if st.session_state.data_source == "Claude API" else 0
+            
+            data_source = st.radio(
+                "Data Source",
+                options=["Mock Data", "Claude API"],
+                index=default_index,
+                help="Mock Data: 使用模擬數據（無需 API Key）\nClaude API: 使用 Claude API 生成內容（需要 API Key）",
+                key="sidebar_data_source"
+            )
+            st.session_state.data_source = data_source
         
         st.divider()
         
