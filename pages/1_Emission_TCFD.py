@@ -319,7 +319,7 @@ Please write a concise summary in English, approximately 250 words, that highlig
 
                 # Sync carbon emission summary (Emission Summary) for Step2 / other chapters
                 try:
-                emission_full = carbon_emission.get("full_result", {}) if isinstance(carbon_emission, dict) else {}
+                    emission_full = carbon_emission.get("full_result", {}) if isinstance(carbon_emission, dict) else {}
                 except Exception:
                     emission_full = {}
                 emission_summary = {
