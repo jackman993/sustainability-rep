@@ -15,7 +15,9 @@ if str(project_root) not in sys.path:
 
 from shared.ui.sidebar_config import render_sidebar_config
 from shared.agents.data_broker import DataBroker
-from shared.engine.environment.step2_generator import generate_environment_report
+from shared.config.api_keys import get_claude_api_key
+from shared.engine.environment import generate_environment_pptx_for_streamlit
+from shared.engine.path_manager import get_environment_output_path, get_tcfd_report_path
 
 st.set_page_config(
     page_title=PAGE_TITLE,
@@ -56,35 +58,92 @@ st.info("""
 """)
 
 if st.button("Generate Environment Report", type="primary", use_container_width=True):
-    # 產生實際的 Environment PPTX 報告
+    # 產生完整的 Environment PPTX（包含 LLM 文字 + TCFD 7 頁）
     with st.spinner("Generating environment report... (this may take a while)"):
         progress = st.progress(0)
         status = st.empty()
 
         try:
-            status.text("Step 1/3: Preparing data & templates...")
-            progress.progress(20)
+            # 0. 檢查 API Key
+            api_key = get_claude_api_key()
+            if not api_key:
+                st.error("❌ 系統尚未設定 Claude API Key。")
+                st.info("💡 請在伺服器 secrets 或環境變數中設定 `ANTHROPIC_API_KEY`。")
+                st.stop()
 
-            # 呼叫後端引擎，實際產出檔案（含 TCFD 7 頁）
-            report_path = generate_environment_report()
+            # 1. 準備資料
+            status.text("Step 1/4: Preparing data & templates...")
+            progress.progress(10)
 
-            status.text("Step 2/3: Finalizing slides & saving file...")
+            # 產業與排放資料來自 Step1
+            industry = st.session_state.get("carbon_calc_industry", "Manufacturing")
+            emission_data = st.session_state.get("carbon_emission") or {}
+
+            # 公司規模 / 預算資訊（如果有）
+            estimated_revenue = st.session_state.get("estimated_annual_revenue", {})
+            revenue_k = estimated_revenue.get("k_value")
+            revenue_currency = estimated_revenue.get("currency", "USD")
+            revenue_display = (
+                f"{revenue_k:.0f}K {revenue_currency}" if revenue_k else "Unknown"
+            )
+
+            company_profile = {
+                "size": st.session_state.get("company_size", "Small and Medium"),
+                "revenue_display": revenue_display,
+                "budget_display": st.session_state.get(
+                    "energy_saving_budget_display", "appropriate"
+                ),
+            }
+
+            # TCFD 輸出資料夾：優先使用我們 app 的標準路徑
+            tcfd_report_path = get_tcfd_report_path()
+            tcfd_output_folder = (
+                str(tcfd_report_path.parent) if tcfd_report_path else None
+            )
+
+            # 2. 呼叫 Environment 引擎（會跑 LLM + 插入 TCFD）
+            status.text("Step 2/4: Generating slides with LLM content...")
+            progress.progress(40)
+
+            prs = generate_environment_pptx_for_streamlit(
+                api_key=api_key,
+                industry=industry,
+                emission_data=emission_data,
+                tcfd_output_folder=tcfd_output_folder,
+                emission_output_folder=None,
+                company_profile=company_profile,
+                test_mode=False,
+            )
+
+            # 3. 儲存到標準輸出路徑
+            status.text("Step 3/4: Saving PPTX file...")
             progress.progress(70)
 
-            # 檔案存在性檢查
-            if not report_path or not report_path.exists():
-                st.error("❌ Environment 報告生成失敗：找不到輸出檔案。請查看終端日誌中的 [DEBUG] / [ERROR] 訊息。")
+            output_path = get_environment_output_path()
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            prs.save(str(output_path))
+
+            # 4. 檔案存在性檢查 + 下載按鈕
+            status.text("Step 4/4: Preparing download...")
+            progress.progress(90)
+
+            if not output_path.exists():
+                st.error(
+                    "❌ Environment 報告生成失敗：找不到輸出檔案。請查看終端日誌中的 [DEBUG] / [ERROR] 訊息。"
+                )
             else:
                 progress.progress(100)
-                status.text("Step 3/3: Ready to download.")
+                status.text("✅ Done.")
 
-                file_size_kb = report_path.stat().st_size / 1024
-                st.success("✅ Environment report generated successfully! (includes TCFD slides)")
-                st.caption(f"檔案路徑：`{report_path}`，大小約 {file_size_kb:.2f} KB")
+                file_size_kb = output_path.stat().st_size / 1024
+                st.success(
+                    "✅ Environment report generated successfully! (includes TCFD slides & LLM content)"
+                )
+                st.caption(f"檔案路徑：`{output_path}`，大小約 {file_size_kb:.2f} KB")
 
                 # 建立下載按鈕
                 try:
-                    with open(report_path, "rb") as f:
+                    with open(output_path, "rb") as f:
                         file_bytes = f.read()
                     st.download_button(
                         "📥 Download Environment Report (Environment_report.pptx)",
