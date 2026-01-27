@@ -15,6 +15,7 @@ if str(project_root) not in sys.path:
 
 from shared.engine.carbon import render_calculator
 from shared.ui.sidebar_config import render_sidebar_config
+from shared.agents.data_broker import DataBroker
 
 # TCFD 模組導入 - 延遲導入，避免頁面崩潰
 TCFD_AVAILABLE = False
@@ -291,6 +292,32 @@ Please write a concise summary in English, approximately 250 words, that highlig
             st.session_state["tcfd_report_file"] = output_file
             st.session_state["tcfd_report_summary"] = summary
             st.session_state["tcfd_report_generated_tab2"] = True
+
+            # 構建並保存簡化版 TCFD Summary（供其他章節使用）
+            try:
+                total_emission = None
+                if carbon_emission and isinstance(carbon_emission, dict):
+                    # 優先使用 total_tco2e，如無則回退 full_result
+                    total_emission = carbon_emission.get("total_tco2e")
+                    if total_emission is None and isinstance(carbon_emission.get("full_result"), dict):
+                        total_emission = carbon_emission["full_result"].get("Total_S1S2")
+                # 確保是 float 或 None
+                total_emission = float(total_emission) if total_emission is not None else None
+
+                tcfd_summary = {
+                    "industry": industry,
+                    "total_emission_tco2e": total_emission,
+                    "revenue_k_ntd": float(revenue_k) if revenue_k else None,
+                    "key_climate_points": [
+                        f"本公司所屬產業：{industry}，在氣候變遷與淨零轉型情境下，營運活動面臨顯著的氣候風險與轉型壓力。",
+                        f"最近一次盤查的溫室氣體排放總量約為 {total_emission} tCO2e（僅含範疇一與範疇二），顯示營運高度依賴能源與碳密集設備。",
+                        f"在約 {revenue_k:.0f} K {revenue_currency} 的年度營收規模下，若能系統性導入節能設備、再生能源與排放管理機制，將同時降低營運成本並提升永續形象與客戶信任。"
+                    ]
+                }
+                DataBroker.set_tcfd_summary(tcfd_summary)
+                print(f"[DEBUG] TCFD Summary 已寫入 DataBroker：{tcfd_summary}")
+            except Exception as e:
+                print(f"[WARNING] 無法建立或保存 TCFD Summary: {e}")
             
             # 顯示成功訊息
             st.success("✅ TCFD Report generated successfully!")
@@ -483,6 +510,30 @@ Please write a concise summary in English, approximately 250 words, that highlig
                     use_container_width=True,
                     key="download_tcfd_report"
                 )
+
+            # 5. 構建並保存簡化版 TCFD Summary（供其他章節使用）
+            try:
+                total_emission = None
+                if carbon_emission and isinstance(carbon_emission, dict):
+                    total_emission = carbon_emission.get("total_tco2e")
+                    if total_emission is None and isinstance(carbon_emission.get("full_result"), dict):
+                        total_emission = carbon_emission["full_result"].get("Total_S1S2")
+                total_emission = float(total_emission) if total_emission is not None else None
+
+                tcfd_summary = {
+                    "industry": industry,
+                    "total_emission_tco2e": total_emission,
+                    "revenue_k_ntd": float(revenue_k) if revenue_k else None,
+                    "key_climate_points": [
+                        f"本公司所屬產業：{industry}，在氣候變遷與淨零轉型情境下，營運活動面臨顯著的氣候風險與轉型壓力。",
+                        f"最近一次盤查的溫室氣體排放總量約為 {total_emission} tCO2e（僅含範疇一與範疇二），顯示營運高度依賴能源與碳密集設備。",
+                        f"在約 {revenue_k:.0f} K {revenue_currency} 的年度營收規模下，若能系統性導入節能設備、再生能源與排放管理機制，將同時降低營運成本並提升永續形象與客戶信任。"
+                    ]
+                }
+                DataBroker.set_tcfd_summary(tcfd_summary)
+                print(f"[DEBUG] TCFD Summary 已寫入 DataBroker（main 按鈕）：{tcfd_summary}")
+            except Exception as e:
+                print(f"[WARNING] 無法建立或保存 TCFD Summary（main 按鈕）: {e}")
             
         except Exception as e:
             st.error(f"生成失敗：{str(e)}")

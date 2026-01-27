@@ -14,6 +14,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from shared.ui.sidebar_config import render_sidebar_config
+from shared.agents.data_broker import DataBroker
 
 st.set_page_config(
     page_title=PAGE_TITLE,
@@ -30,6 +31,15 @@ st.divider()
 
 # Prerequisites
 st.success("✅ Emission & TCFD completed")
+
+# 顯示來自 TCFD 的摘要資料（透過 DataBroker / Skill Agent）
+tcfd_summary = DataBroker.get_tcfd_summary()
+if not tcfd_summary:
+    st.warning("⚠️ 尚未找到 TCFD Summary。請先在 Step 1 生成 TCFD 報告，系統才會將關鍵氣候資訊帶入本章節。")
+else:
+    with st.expander("TCFD Summary（供 Environment / 其他章節使用）", expanded=False):
+        st.write("以下為從 Step 1 彙整出的最小氣候關鍵資訊，之後可直接餵給 LLM Prompt：")
+        st.json(tcfd_summary)
 
 st.divider()
 
