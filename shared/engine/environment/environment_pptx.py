@@ -1005,10 +1005,10 @@ class EnvironmentPPTXEngine:
                 values = [val_2023, val_2024, val_2025]
                 max_val = max(values) if values else 1.0
 
-                # Chart area on the right
-                chart_left = RIGHT_CONTENT_LEFT
+                # Chart area on the right (slightly narrower to avoid edge clipping)
+                chart_width = CONTENT_WIDTH * 0.8
+                chart_left = RIGHT_CONTENT_LEFT + (CONTENT_WIDTH - chart_width) / 2
                 chart_top = CONTENT_TOP
-                chart_width = CONTENT_WIDTH
                 chart_height = CONTENT_HEIGHT
 
                 # Define bar layout

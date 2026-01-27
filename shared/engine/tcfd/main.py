@@ -812,17 +812,19 @@ def generate_combined_pptx(
         print(f"[DEBUG] 最終輸出路徑 (absolute): {final_path.resolve()}")
         print(f"[DEBUG] 文件大小: {file_size} bytes")
         
-        # 在 UI 中顯示保存成功訊息（只有文件真的存在時才顯示）
+        # Show success message in UI (only if file really exists)
         try:
             file_size_kb = file_size / 1024
-            st.success(f"✅ **文件已成功保存並驗證！**\n\n"
-                      f"📁 **路徑**: `{save_path}`\n\n"
-                      f"📊 **文件大小**: {file_size_kb:.2f} KB ({file_size:,} bytes)\n\n"
-                      f"📄 **Slides 數量**: {len(prs.slides)} 頁")
-            print(f"[SUCCESS] 文件保存成功並在 UI 中顯示: {save_path}")
+            st.success(
+                "✅ **TCFD report saved and verified successfully!**\n\n"
+                f"📁 **Path**: `{save_path}`\n\n"
+                f"📊 **File size**: {file_size_kb:.2f} KB ({file_size:,} bytes)\n\n"
+                f"📄 **Slide count**: {len(prs.slides)}"
+            )
+            print(f"[SUCCESS] TCFD file saved and reported in UI: {save_path}")
         except Exception as display_error:
-            print(f"[WARNING] 無法在 UI 中顯示成功訊息: {display_error}")
-            # 即使顯示失敗，也不影響返回路徑
+            print(f"[WARNING] Unable to show success message in UI: {display_error}")
+            # Even if UI display fails, the file path is still valid
         
         return final_path
         
