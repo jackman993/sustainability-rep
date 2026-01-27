@@ -317,8 +317,25 @@ Please write a concise summary in English, approximately 250 words, that highlig
                 }
                 DataBroker.set_tcfd_summary(tcfd_summary)
                 print(f"[DEBUG] TCFD Summary 已寫入 DataBroker：{tcfd_summary}")
+
+                # 同步寫入碳排摘要（Emission Summary），供 Step2 / 其他章節使用
+                try:
+                    emission_full = carbon_emission.get("full_result", {}) if isinstance(carbon_emission, dict) else {}
+                except Exception:
+                    emission_full = {}
+                emission_summary = {
+                    "industry": industry,
+                    "region": emission_full.get("Region") if isinstance(emission_full, dict) else None,
+                    "total_tco2e": total_emission,
+                    "scope1_tco2e": emission_full.get("Scope1_Total") if isinstance(emission_full, dict) else None,
+                    "scope2_tco2e": emission_full.get("Scope2_Electricity") if isinstance(emission_full, dict) else None,
+                    "scope3_minor_tco2e": emission_full.get("Scope3_Minor") if isinstance(emission_full, dict) else None,
+                    "share_percent": emission_full.get("Share_Percent") if isinstance(emission_full, dict) else None,
+                }
+                DataBroker.set_emission_summary(emission_summary)
+                print(f"[DEBUG] Emission Summary 已寫入 DataBroker：{emission_summary}")
             except Exception as e:
-                print(f"[WARNING] 無法建立或保存 TCFD Summary: {e}")
+                print(f"[WARNING] 無法建立或保存 TCFD / Emission Summary: {e}")
             
             # 顯示成功訊息
             st.success("✅ TCFD Report generated successfully!")

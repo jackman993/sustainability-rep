@@ -34,4 +34,24 @@ class DataBroker:
         """是否已經有 TCFD Summary。"""
         return DataBroker.TCFD_KEY in st.session_state
 
+    # ---------- Emission Summary（碳排摘要） ----------
+    EMISSION_KEY = "emission_summary"
+
+    @staticmethod
+    def set_emission_summary(summary: Dict[str, Any]) -> None:
+        """寫入或更新碳排摘要（供 Environment / Company / Governance 共用）。"""
+        if not isinstance(summary, dict):
+            raise ValueError("emission_summary 必須是 dict")
+        st.session_state[DataBroker.EMISSION_KEY] = summary
+
+    @staticmethod
+    def get_emission_summary(default: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+        """讀取碳排摘要，如果不存在則回傳 default。"""
+        return st.session_state.get(DataBroker.EMISSION_KEY, default)
+
+    @staticmethod
+    def has_emission_summary() -> bool:
+        """是否已經有碳排摘要。"""
+        return DataBroker.EMISSION_KEY in st.session_state
+
 

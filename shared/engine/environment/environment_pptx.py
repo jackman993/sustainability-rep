@@ -14,6 +14,7 @@ from lxml import etree
 
 from .config import ENVIRONMENT_CONFIG, ENVIRONMENT_IMAGE_MAPPING, TCFD_TABLES, ASSETS_PATH
 from .content_engine import ContentEngine
+from ..path_manager import get_tcfd_report_path
 
 # 加入 assets 路徑
 import sys
@@ -450,7 +451,18 @@ class EnvironmentPPTXEngine:
 
     def _find_latest_tcfd_file(self):
         """Find the TCFD PPTX file (single file containing 7 pages)"""
-        
+        # 優先使用本系統 Step1 生成的 TCFD 報告（與 path_manager 對齊）
+        try:
+            tcfd_path = get_tcfd_report_path()
+            if tcfd_path and tcfd_path.exists():
+                print(f"  ✓ Using tcfd_report_path from path_manager: {tcfd_path}")
+                return str(tcfd_path)
+            else:
+                print("  ℹ tcfd_report_path not found or does not exist, fallback to legacy search paths")
+        except Exception as e:
+            print(f"  ⚠ Failed to get tcfd_report_path from path_manager: {e}")
+
+        # 備援：沿用舊有目錄掃描邏輯（assets/TCFD 或本機開發路徑）
         # TCFD file patterns (try multiple naming conventions)
         tcfd_patterns = [
             "TCFD*.pptx",            # General pattern (includes TCFD_table (26).pptx)

@@ -35,14 +35,21 @@ st.divider()
 # Prerequisites
 st.success("✅ Emission & TCFD completed")
 
-# 顯示來自 TCFD 的摘要資料（透過 DataBroker / Skill Agent）
+# 顯示來自 TCFD / Emission 的摘要資料（透過 DataBroker / Skill Agent）
 tcfd_summary = DataBroker.get_tcfd_summary()
+emission_summary = DataBroker.get_emission_summary()
+
 if not tcfd_summary:
     st.warning("⚠️ 尚未找到 TCFD Summary。請先在 Step 1 生成 TCFD 報告，系統才會將關鍵氣候資訊帶入本章節。")
 else:
     with st.expander("TCFD Summary（供 Environment / 其他章節使用）", expanded=False):
         st.write("以下為從 Step 1 彙整出的最小氣候關鍵資訊，之後可直接餵給 LLM Prompt：")
         st.json(tcfd_summary)
+
+if emission_summary:
+    with st.expander("Emission Summary（供 Environment / 其他章節使用）", expanded=False):
+        st.write("以下為從 Step 1 彙整出的碳排摘要，可用於後續章節的文字與圖表：")
+        st.json(emission_summary)
 
 st.divider()
 
