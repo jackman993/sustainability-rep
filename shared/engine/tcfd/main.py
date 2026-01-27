@@ -271,8 +271,22 @@ def generate_table_content(
         carbon_emission=carbon_emission
     )
     
+    # 調試信息
+    print(f"[DEBUG] generate_table_content:")
+    print(f"  - use_mock: {use_mock}")
+    print(f"  - llm_api_key exists: {bool(llm_api_key)}")
+    print(f"  - llm_api_key length: {len(llm_api_key) if llm_api_key else 0}")
+    print(f"  - llm_provider: {llm_provider}")
+    
     # 如果明確要求使用 Mock，或沒有提供 API Key，使用模擬數據
-    if use_mock or not llm_api_key or not llm_provider:
+    if use_mock:
+        print(f"[DEBUG] 使用 Mock 數據（use_mock=True）")
+        return generate_mock_data(prompt_id, industry, carbon_emission)
+    
+    if not llm_api_key or not llm_provider:
+        print(f"[WARNING] API Key 或 Provider 缺失，回退到 Mock 數據")
+        print(f"  - llm_api_key: {bool(llm_api_key)}")
+        print(f"  - llm_provider: {bool(llm_provider)}")
         return generate_mock_data(prompt_id, industry, carbon_emission)
     
     # 嘗試調用 LLM API

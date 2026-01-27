@@ -226,6 +226,13 @@ Please write a concise summary in English, approximately 250 words, that highlig
             # 創建錯誤顯示容器（確保錯誤一定會顯示）
             error_container = st.container()
             
+            # 調試信息
+            print(f"[DEBUG] 調用 generate_combined_pptx:")
+            print(f"  - use_api: {use_api}")
+            print(f"  - api_key exists: {bool(api_key)}")
+            print(f"  - api_key length: {len(api_key) if api_key else 0}")
+            print(f"  - use_mock: {not use_api}")
+            
             try:
                 output_file = generate_combined_pptx(
                     output_filename="TCFD_table.pptx",
@@ -235,7 +242,7 @@ Please write a concise summary in English, approximately 250 words, that highlig
                     carbon_emission=carbon_emission,
                     llm_api_key=api_key if use_api else None,
                     llm_provider="anthropic" if use_api else None,
-                    use_mock=not use_api
+                    use_mock=not use_api  # 如果 use_api=False，則 use_mock=True
                 )
             except Exception as gen_error:
                 # 捕獲生成過程中的異常
