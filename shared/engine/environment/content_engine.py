@@ -24,20 +24,29 @@ class ContentEngine:
             self.test_mode = True
     
     def _get_company_context(self):
-        """Get company size background description"""
+        """Get company size and emission background description (for prompt enrichment)"""
         if not self.company_profile:
             return ""
-        
+
         size = self.company_profile.get("size", "Small and Medium")
         revenue = self.company_profile.get("revenue_display", "Unknown")
         budget = self.company_profile.get("budget_display", "Unknown")
-        
+        industry = self.company_profile.get("industry", "Manufacturing")
+        total_emission = self.company_profile.get("total_emission_tco2e")
+
+        emission_line = (
+            f"- Latest Scope 1+2 carbon emissions (approx.): {total_emission} tCO2e\n"
+            if total_emission is not None
+            else ""
+        )
+
         return f"""
-Company Size Background:
+Company Background:
+- Industry: {industry}
 - Company Size: {size} Enterprise
 - Estimated Annual Revenue: {revenue}
 - Recommended Energy-Saving Investment Budget: {budget}
-Please adjust the description tone and recommended amounts based on this size.
+{emission_line}Please adjust the description tone and recommended amounts based on this size and emission level.
 """
 
     def _clean_llm_output(self, text):
@@ -99,7 +108,12 @@ Please adjust the description tone and recommended amounts based on this size.
 
     def generate_environmental_cover(self, config):
         """Environmental Chapter Cover Introduction - 50-70 words (for right text box)"""
-        prompt = """Write 50-70 words for the ESG report environmental chapter introduction, including: climate change challenges, corporate environmental responsibility, sustainability commitments, and TCFD establishment. Use a professional and warm tone. Use "we" and "our company" instead of third-person expressions like "this company" or "the enterprise". Keep it concise and impactful."""
+        company_context = self._get_company_context()
+        prompt = f"""You are writing the environmental chapter cover for an ESG report.
+
+{company_context}
+
+Write 50-70 words for the introduction, including: climate change challenges, corporate environmental responsibility, sustainability commitments, and TCFD establishment. Use a professional and warm tone. Use "we" and "our company" instead of third-person expressions like "this company" or "the enterprise". If emission and revenue information are provided above, reflect an appropriate level of ambition and practicality based on the company's current status. Keep it concise and impactful."""
         return self.generate(prompt, max_tokens=300)
 
     def generate_sustainability_committee(self, config):
@@ -107,9 +121,12 @@ Please adjust the description tone and recommended amounts based on this size.
         company_context = self._get_company_context()
         # Get annual revenue information (including Arabic numerals)
         revenue_display = self.company_profile.get("revenue_display", "Unknown")
-        prompt = f"""Write 140-160 words describing the sustainability committee organizational structure diagram, including: committee establishment purpose, importance of organizational structure, meeting frequency, cross-departmental collaboration mechanisms, policy formulation and crisis management. Use a professional tone. Use first-person expressions like "we" and "our company".
-Our company's annual revenue is approximately {revenue_display}.
+        prompt = f"""You are writing the 4.1 Environmental Policy and Management Framework page for an ESG report.
+
 {company_context}
+
+Write 140-160 words describing the sustainability committee organizational structure diagram, including: committee establishment purpose, importance of organizational structure, meeting frequency, cross-departmental collaboration mechanisms, policy formulation and crisis management. Use a professional tone. Use first-person expressions like "we" and "our company".
+Our company's annual revenue is approximately {revenue_display}.
 Please adjust the description based on company size. For example, small and medium-sized enterprises can emphasize "streamlined and efficient organizational structure," while medium-sized enterprises can emphasize "comprehensive cross-departmental collaboration"."""
         return self.generate(prompt, max_tokens=600)
 

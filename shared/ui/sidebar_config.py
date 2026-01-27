@@ -1,7 +1,7 @@
 """
 Shared Sidebar Configuration Component
-- dev 環境：允許在 sidebar 手動輸入 / 覆蓋 API Key
-- prod 環境：API Key 只從伺服器端設定（secrets / 環境變數），不允許使用者輸入
+- dev: allow entering / overriding API Key in sidebar
+- prod: API Key only from server-side config (secrets / env), no user input
 """
 import streamlit as st
 
@@ -16,7 +16,7 @@ def render_sidebar_config():
 
         env = get_app_env()
 
-        # ===== 開發環境：允許在 sidebar 手動輸入 API Key =====
+        # ===== Dev environment: allow manual API Key input in sidebar =====
         if env == AppEnv.DEV:
             st.subheader("Claude API Settings (Dev)")
 
@@ -24,15 +24,15 @@ def render_sidebar_config():
                 "Claude API Key",
                 value=st.session_state.get("claude_api_key", ""),
                 type="password",
-                help="開發環境：可在此輸入 / 覆蓋 Anthropic Claude API Key。",
+                help="Dev only: input / override Anthropic Claude API Key here.",
                 key="claude_api_key_input",
             )
 
             if api_key_input:
                 st.session_state["claude_api_key"] = api_key_input
-                st.success("✅ API Key 已保存到當前開發 session")
+                st.success("✅ API Key saved to current dev session")
 
-        # ===== 共用：顯示目前「實際生效」的 Key 狀態（dev / prod 都顯示） =====
+        # ===== Shared: show effective Key status (dev / prod) =====
         effective_key = get_claude_api_key()
         st.subheader("Claude API Status")
 
@@ -43,13 +43,13 @@ def render_sidebar_config():
                 else "***"
             )
             if env == AppEnv.PROD:
-                st.info(f"Claude Key（PROD）: ✅ 已由伺服器配置 ({masked})")
-                st.caption("此環境不允許在前端輸入 API Key，請由系統管理員在伺服器上設定。")
+                st.info(f"Claude Key (PROD): ✅ Configured on server ({masked})")
+                st.caption("Front-end input is disabled in this environment. Please configure the key on the server.")
             else:
-                st.info(f"Claude Key（DEV）: ✅ 有效 ({masked})")
+                st.info(f"Claude Key (DEV): ✅ Active ({masked})")
         else:
-            st.error("Claude Key: ❌ 尚未設定")
-            st.caption("請在伺服器環境變數或 `.streamlit/secrets.toml` 中設定 `ANTHROPIC_API_KEY`。")
+            st.error("Claude Key: ❌ Not configured")
+            st.caption("Please configure `ANTHROPIC_API_KEY` in server environment variables or `.streamlit/secrets.toml`.")
 
         # 強制使用 API 模式（保留原本行為）
         st.session_state["data_source"] = "Claude API"
