@@ -16,7 +16,7 @@ from .config import ENVIRONMENT_CONFIG, ENVIRONMENT_IMAGE_MAPPING, TCFD_TABLES, 
 from .content_engine import ContentEngine
 from ..path_manager import get_tcfd_report_path
 
-# 加入 assets 路徑
+# Add assets path to import local helpers (for legacy emission_pptx, if present)
 import sys
 sys.path.insert(0, str(Path(__file__).parent / "assets"))
 # Note: TCFD_main_pptx no longer needed - we insert TCFD PPTX file directly

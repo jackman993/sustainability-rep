@@ -92,7 +92,7 @@ with tab2:
     
     st.divider()
     
-    # 顯示報告內容說明
+    # Show report contents description
     st.markdown("""
     **Report Contents:**
     - Complete TCFD report with 7 tables:
@@ -131,11 +131,11 @@ with tab2:
         print(f"[DEBUG] api_key length: {len(api_key) if api_key else 0}")
         print(f"[DEBUG] api_key_locked: {st.session_state.get('api_key_locked', False)}")
         
-        # 如果沒有 API Key，顯示錯誤並停止
+        # If no API Key, show error and stop
         if not api_key:
-            st.error(f"❌ API Key 未配置！")
-            st.info("💡 請在左側 sidebar 的 API Configuration 中配置 Claude API Key")
-            st.info("💡 或創建 `.streamlit/secrets.toml` 文件並添加：ANTHROPIC_API_KEY = \"your-key-here\"")
+            st.error("❌ API Key is not configured!")
+            st.info("💡 Please configure the Claude API Key in the left sidebar (API Configuration).")
+            st.info("💡 Or create a `.streamlit/secrets.toml` file and add `ANTHROPIC_API_KEY = \"your-key-here\"`.")
             st.stop()
         
         # 創建進度顯示
@@ -238,8 +238,8 @@ Please write a concise summary in English, approximately 250 words, that highlig
                 try:
                     file_size = output_file.stat().st_size
                     file_size_kb = file_size / 1024
-                    st.info(f"📦 **文件確認**: 文件已存在於 `{output_file}`\n\n"
-                           f"📊 **文件大小**: {file_size_kb:.2f} KB")
+                st.info(f"📦 **File confirmed**: `{output_file}`\n\n"
+                        f"📊 **File size**: {file_size_kb:.2f} KB")
                 except:
                     pass
             
@@ -254,15 +254,15 @@ Please write a concise summary in English, approximately 250 words, that highlig
             if not hasattr(output_file, 'exists'):
                 error_detail = f"❌ Invalid return path object: {type(output_file)}"
                 st.error(error_detail)
-                st.code(f"返回對象: {output_file}")
+                st.code(f"Return object: {output_file}")
                 raise Exception(error_detail)
             
             if not output_file.exists():
                 error_detail = f"❌ File does not exist (expected path: {output_file})"
                 st.error(error_detail)
                 
-                # 顯示詳細的調試信息
-                with st.expander("🔍 調試信息", expanded=True):
+                # Show detailed debug information
+                with st.expander("🔍 Debug information", expanded=True):
                     st.write(f"**Return path type**: {type(output_file)}")
                     st.write(f"**Return path**: {output_file}")
                     st.write(f"**Absolute path**: {output_file.resolve() if hasattr(output_file, 'resolve') else 'N/A'}")
@@ -297,11 +297,11 @@ Please write a concise summary in English, approximately 250 words, that highlig
             try:
                 total_emission = None
                 if carbon_emission and isinstance(carbon_emission, dict):
-                    # 優先使用 total_tco2e，如無則回退 full_result
+                    # Prefer total_tco2e; fall back to full_result["Total_S1S2"] if needed
                     total_emission = carbon_emission.get("total_tco2e")
                     if total_emission is None and isinstance(carbon_emission.get("full_result"), dict):
                         total_emission = carbon_emission["full_result"].get("Total_S1S2")
-                # 確保是 float 或 None
+                # Ensure numeric or None
                 total_emission = float(total_emission) if total_emission is not None else None
 
                 tcfd_summary = {
@@ -309,9 +309,9 @@ Please write a concise summary in English, approximately 250 words, that highlig
                     "total_emission_tco2e": total_emission,
                     "revenue_k_ntd": float(revenue_k) if revenue_k else None,
                     "key_climate_points": [
-                        f"本公司所屬產業：{industry}，在氣候變遷與淨零轉型情境下，營運活動面臨顯著的氣候風險與轉型壓力。",
-                        f"最近一次盤查的溫室氣體排放總量約為 {total_emission} tCO2e（僅含範疇一與範疇二），顯示營運高度依賴能源與碳密集設備。",
-                        f"在約 {revenue_k:.0f} K {revenue_currency} 的年度營收規模下，若能系統性導入節能設備、再生能源與排放管理機制，將同時降低營運成本並提升永續形象與客戶信任。"
+                        f"Our company operates in the {industry} sector and faces significant climate-related transition and physical risks as the global economy moves toward net zero.",
+                        f"The most recent greenhouse gas inventory indicates total Scope 1 and 2 emissions of approximately {total_emission} tCO₂e (covering direct fuel use and purchased electricity), highlighting our current dependency on energy- and carbon-intensive activities.",
+                        f"With annual revenue of around {revenue_k:.0f} K {revenue_currency}, we recognize that systematic investments in energy efficiency, renewable energy, and emissions reduction measures are essential to reduce operating costs, enhance competitiveness, and strengthen our sustainability performance."
                     ]
                 }
                 DataBroker.set_tcfd_summary(tcfd_summary)
@@ -319,7 +319,7 @@ Please write a concise summary in English, approximately 250 words, that highlig
 
                 # Sync carbon emission summary (Emission Summary) for Step2 / other chapters
                 try:
-                    emission_full = carbon_emission.get("full_result", {}) if isinstance(carbon_emission, dict) else {}
+                emission_full = carbon_emission.get("full_result", {}) if isinstance(carbon_emission, dict) else {}
                 except Exception:
                     emission_full = {}
                 emission_summary = {
