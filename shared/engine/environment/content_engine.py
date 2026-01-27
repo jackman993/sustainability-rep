@@ -4,7 +4,7 @@ ESG Report Generator - Content Generation Engine (Environment Chapter)
 import re
 
 from shared.config.api_keys import get_claude_api_key
-from shared.llm.claude_client import call_claude_api, get_client_manager, initialize_client
+from shared.engine.tcfd.main import call_claude_api
 
 
 class ContentEngine:
@@ -13,35 +13,14 @@ class ContentEngine:
     def __init__(self, test_mode=False, company_profile=None, api_key=None):
         self.test_mode = test_mode
         self.company_profile = company_profile or {}
-        self.client_available = False
-
-        # 決定實際要用的 API Key：
-        # - 優先使用呼叫方傳入的 api_key（例如 Step1/Step2 共用的 key）
-        # - 否則使用統一的 get_claude_api_key()
-        actual_api_key = api_key or get_claude_api_key()
+        self.api_key = api_key or get_claude_api_key()
 
         if self.test_mode:
             print("  ✓ ContentEngine in TEST MODE: using placeholder text (no LLM calls)")
             return
 
-        if not actual_api_key:
+        if not self.api_key:
             print("  ✗ ContentEngine: No API Key available, switch to test mode")
-            self.test_mode = True
-            return
-
-        # 透過共用的 Claude client 管理器來使用同一組 client（與 Step1 一致）
-        try:
-            manager = get_client_manager()
-            if not manager.is_initialized():
-                # 若尚未初始化，使用目前的 key 初始化一次
-                initialize_client(actual_api_key)
-                print("  ✓ ContentEngine initialized global Claude client")
-            else:
-                print("  ✓ ContentEngine reusing existing global Claude client")
-            self.client_available = True
-        except Exception as e:
-            print(f"  ✗ ContentEngine failed to initialize global client: {e}")
-            print("  ⚠ Falling back to test mode")
             self.test_mode = True
     
     def _get_company_context(self):
@@ -100,14 +79,14 @@ Please adjust the description tone and recommended amounts based on this size.
         return cleaned_text
 
     def generate(self, prompt, max_tokens=1000):
-        """Call Claude API via shared client and clean output"""
+        """Call Claude API (same helper as TCFD) and clean output"""
         # Test mode: 回傳明確的 placeholder（方便你在 PPTX 中看得出來）
-        if self.test_mode or not self.client_available:
+        if self.test_mode:
             return "[Test Mode] Environment content placeholder. LLM 未被呼叫，請檢查 API Key / 部署設定。"
 
         try:
-            # 直接透過共用的 call_claude_api（與 TCFD 相同路徑）
-            raw_text = call_claude_api(prompt, max_tokens=max_tokens)
+            # 使用與 TCFD 相同的 call_claude_api 實作（已在 Step1 驗證可用）
+            raw_text = call_claude_api(prompt, api_key=self.api_key)
             cleaned_text = self._clean_llm_output(raw_text)
             return cleaned_text
         except Exception as e:
