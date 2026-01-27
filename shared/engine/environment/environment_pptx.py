@@ -12,8 +12,8 @@ import glob
 import copy
 from lxml import etree
 
-from config import ENVIRONMENT_CONFIG, ENVIRONMENT_IMAGE_MAPPING, TCFD_TABLES, ASSETS_PATH
-from content_engine import ContentEngine
+from .config import ENVIRONMENT_CONFIG, ENVIRONMENT_IMAGE_MAPPING, TCFD_TABLES, ASSETS_PATH
+from .content_engine import ContentEngine
 
 # 加入 assets 路徑
 import sys
