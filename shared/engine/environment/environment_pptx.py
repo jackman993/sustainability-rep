@@ -817,25 +817,125 @@ class EnvironmentPPTXEngine:
                           height=CONTENT_HEIGHT,
                           font_size=Pt(12))
         
-        # Right side: Emission table (reduced 50%, right-aligned)
-        # This will use the emission_data set above from step1
-        if create_emission_table_on_slide_right is not None:
-            try:
-                create_emission_table_on_slide_right(section_slide)
-            except Exception as e:
-                print(f"  ⚠ Unable to create emission table on slide: {e}")
-        else:
-            # 如果無法載入 emission_pptx，就在右側放一段提示文字，避免整個報告失敗
+        # Right side: Simplified emission summary table (built-in, no external module)
+        # Prefer using dynamic emission data from this session
+        emission = self.emission_data or {}
+        full = emission.get("full_result", {}) if isinstance(emission, dict) else {}
+
+        scope1 = (
+            full.get("Scope1_Total")
+            if isinstance(full, dict)
+            else None
+        ) or emission.get("Scope1_Total")
+
+        scope2 = (
+            full.get("Scope2_Electricity")
+            if isinstance(full, dict)
+            else None
+        ) or emission.get("Scope2_Electricity")
+
+        scope3 = (
+            full.get("Scope3_Minor")
+            if isinstance(full, dict)
+            else None
+        ) or emission.get("Scope3_Minor")
+
+        total = (
+            full.get("Total_S1S2")
+            if isinstance(full, dict)
+            else None
+        ) or emission.get("Total_S1S2") or emission.get("total_tco2e")
+
+        # Fallback when no data is available
+        if total is None and not any([scope1, scope2, scope3]):
             self._add_text_box(
                 section_slide,
-                "[Emission Table Placeholder]\n\nEmission table component (emission_pptx) is not available in this deployment. "
-                "Please ensure the emission_pptx module is deployed correctly if you want to show the detailed carbon inventory table.",
+                "Emission data for this chapter is not available in the current session.\n\n"
+                "Please complete the Emission calculation in Step 1 and regenerate the report "
+                "to display a detailed carbon inventory table.",
                 left=RIGHT_CONTENT_LEFT,
                 top=CONTENT_TOP,
                 width=CONTENT_WIDTH,
                 height=CONTENT_HEIGHT,
                 font_size=Pt(10),
             )
+        else:
+            # Normalize values
+            scope1 = float(scope1) if scope1 is not None else 0.0
+            scope2 = float(scope2) if scope2 is not None else 0.0
+            scope3 = float(scope3) if scope3 is not None else 0.0
+            total = float(total) if total is not None else scope1 + scope2 + scope3
+
+            # Create a simple 4-row table: header + Scope 1/2/3 + Total
+            rows = 5
+            cols = 3  # Category, tCO2e, Share (%)
+
+            table_left = RIGHT_CONTENT_LEFT
+            table_top = CONTENT_TOP
+            table_width = CONTENT_WIDTH
+            table_height = CONTENT_HEIGHT
+
+            table_shape = section_slide.shapes.add_table(
+                rows, cols, table_left, table_top, table_width, table_height
+            )
+            tbl = table_shape.table
+
+            # Set column widths
+            tbl.columns[0].width = Inches(2.2)  # Category
+            tbl.columns[1].width = Inches(1.8)  # tCO2e
+            tbl.columns[2].width = Inches(2.0)  # Share
+
+            # Header
+            header_titles = ["Category", "Emissions (tCO2e)", "Share of Scope 1+2 (%)"]
+            for col, text in enumerate(header_titles):
+                cell = tbl.cell(0, col)
+                cell.text = text
+                p = cell.text_frame.paragraphs[0]
+                p.font.size = Pt(11)
+                p.font.bold = True
+                p.font.name = "Arial"
+                p.alignment = PP_ALIGN.CENTER
+                cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+
+            # Helper to set row
+            def _set_row(row_idx, label, value, total_value):
+                cell_label = tbl.cell(row_idx, 0)
+                cell_val = tbl.cell(row_idx, 1)
+                cell_share = tbl.cell(row_idx, 2)
+
+                cell_label.text = label
+                cell_val.text = f"{value:.2f}"
+                share = (value / total_value * 100) if total_value > 0 else 0.0
+                cell_share.text = f"{share:.1f}%"
+
+                for cell in (cell_label, cell_val, cell_share):
+                    p = cell.text_frame.paragraphs[0]
+                    p.font.size = Pt(10)
+                    p.font.name = "Arial"
+                    p.alignment = PP_ALIGN.LEFT if cell is cell_label else PP_ALIGN.RIGHT
+                    cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+
+            _set_row(1, "Scope 1 (Direct)", scope1, total if total > 0 else scope1 + scope2 + scope3)
+            _set_row(2, "Scope 2 (Electricity)", scope2, total if total > 0 else scope1 + scope2 + scope3)
+            _set_row(3, "Scope 3 (Minor)", scope3, total if total > 0 else scope1 + scope2 + scope3)
+
+            # Total row
+            total_row = 4
+            cell_label = tbl.cell(total_row, 0)
+            cell_val = tbl.cell(total_row, 1)
+            cell_share = tbl.cell(total_row, 2)
+
+            cell_label.text = "Total Scope 1+2"
+            cell_val.text = f"{total:.2f}"
+            cell_share.text = "100.0%" if total > 0 else "N/A"
+
+            for cell in (cell_label, cell_val, cell_share):
+                p = cell.text_frame.paragraphs[0]
+                p.font.size = Pt(10)
+                p.font.bold = True
+                p.font.name = "Arial"
+                p.alignment = PP_ALIGN.LEFT if cell is cell_label else PP_ALIGN.RIGHT
+                cell.vertical_anchor = MSO_ANCHOR.MIDDLE
         
         # Page 14: Electricity Usage and Energy Conservation Policy (using emission pie chart)
         electricity_text = self.content_engine.generate_electricity_policy(self.config)
