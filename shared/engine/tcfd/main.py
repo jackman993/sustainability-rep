@@ -278,16 +278,14 @@ def generate_table_content(
     print(f"  - llm_api_key length: {len(llm_api_key) if llm_api_key else 0}")
     print(f"  - llm_provider: {llm_provider}")
     
-    # 如果明確要求使用 Mock，或沒有提供 API Key，使用模擬數據
+    # 如果明確要求使用 Mock，使用模擬數據
     if use_mock:
         print(f"[DEBUG] 使用 Mock 數據（use_mock=True）")
         return generate_mock_data(prompt_id, industry, carbon_emission)
     
+    # 必須提供 API Key 和 Provider
     if not llm_api_key or not llm_provider:
-        print(f"[WARNING] API Key 或 Provider 缺失，回退到 Mock 數據")
-        print(f"  - llm_api_key: {bool(llm_api_key)}")
-        print(f"  - llm_provider: {bool(llm_provider)}")
-        return generate_mock_data(prompt_id, industry, carbon_emission)
+        raise ValueError(f"API Key 或 Provider 缺失，無法調用 LLM。llm_api_key: {bool(llm_api_key)}, llm_provider: {bool(llm_provider)}")
     
     # 嘗試調用 LLM API
     try:

@@ -80,13 +80,13 @@ with tab2:
     
     st.divider()
     
-    # 數據源選擇狀態
-    data_source = st.session_state.get("data_source", "Mock Data")
-    if data_source == "Mock Data":
-        st.info("ℹ️ **Data Source**: Mock Data (可在左側 sidebar 切換為 Claude API)")
+    # API Key 狀態檢查
+    api_key = st.session_state.get("claude_api_key")
+    if api_key:
+        masked_key = api_key[:8] + "..." + api_key[-4:] if len(api_key) > 12 else "***"
+        st.info(f"ℹ️ **API Key**: ✅ 已配置 ({masked_key})")
     else:
-        api_key_status = "✅ Set" if st.session_state.get("claude_api_key") else "⚠️ Not Set"
-        st.info(f"ℹ️ **Data Source**: Claude API (可在左側 sidebar 切換) | API Key: {api_key_status}")
+        st.warning("⚠️ **API Key**: 未配置，請在左側 sidebar 配置 API Key")
     
     st.divider()
     
@@ -121,25 +121,19 @@ with tab2:
         # 確保導入 generate_combined_pptx
         from shared.engine.tcfd import generate_combined_pptx
         
-        # 從 sidebar 獲取數據源選擇
-        data_source = st.session_state.get("data_source", "Mock Data")
-        use_api = (data_source == "Claude API")
-        
-        # 獲取 API Key（從 sidebar）
+        # 獲取 API Key（必須配置）
         api_key = st.session_state.get("claude_api_key") or ""
         
         # 調試信息
-        print(f"[DEBUG] data_source: {data_source}")
-        print(f"[DEBUG] use_api: {use_api}")
         print(f"[DEBUG] api_key exists: {bool(api_key)}")
         print(f"[DEBUG] api_key length: {len(api_key) if api_key else 0}")
         print(f"[DEBUG] api_key_locked: {st.session_state.get('api_key_locked', False)}")
         
-        # 如果選擇 Claude API 但沒有 API Key，顯示警告
-        if use_api and not api_key:
-            st.error(f"❌ API Key 未找到！")
-            st.info(f"**調試信息**: data_source={data_source}, use_api={use_api}, api_key_exists={bool(api_key)}")
-            st.info("💡 請檢查 sidebar 中的 API Configuration，確保 API Key 已正確配置")
+        # 如果沒有 API Key，顯示錯誤並停止
+        if not api_key:
+            st.error(f"❌ API Key 未配置！")
+            st.info("💡 請在左側 sidebar 的 API Configuration 中配置 Claude API Key")
+            st.info("💡 或創建 `.streamlit/secrets.toml` 文件並添加：ANTHROPIC_API_KEY = \"your-key-here\"")
             st.stop()
         
         # 創建進度顯示
@@ -151,11 +145,11 @@ with tab2:
             status_text.text("Step 1/3: Generating executive summary...")
             progress_bar.progress(20)
             
+            # 使用 LLM API 生成摘要（必須有 API Key）
             summary = ""
-            if use_api:
-                try:
-                    from shared.engine.tcfd.main import call_claude_api
-                    summary_prompt = f"""Please write a 250-word summary for the following TCFD climate risk report:
+            try:
+                from shared.engine.tcfd.main import call_claude_api
+                summary_prompt = f"""Please write a 250-word summary for the following TCFD climate risk report:
 
 Industry: {industry}
 Total Carbon Emissions: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e
@@ -164,46 +158,22 @@ Revenue: {revenue_str}
 The report contains 7 tables covering: Transformation Risks, Physical Risks, Opportunities (Resource & Energy Efficiency, Products & Services), Metrics and Targets, Systemic Risk Control, and Operational Resilience.
 
 Please write a concise summary in English, approximately 250 words, that highlights the key climate risks, opportunities, and strategic recommendations for the {industry} industry based on the TCFD framework analysis."""
-                    print(f"[DEBUG] 調用 Claude API 生成摘要，API Key 長度: {len(api_key)}")
-                    summary = call_claude_api(summary_prompt, api_key)
-                    print(f"[DEBUG] Claude API 調用成功，摘要長度: {len(summary)}")
-                    summary = summary.split('\n\n')[0].strip()
-                    if len(summary.split()) > 300:
-                        words = summary.split()[:250]
-                        summary = ' '.join(words) + "..."
-                    st.success("✅ LLM 摘要生成成功")
-                except Exception as e:
-                    error_msg = str(e)
-                    print(f"[ERROR] Claude API 調用失敗: {error_msg}")
-                    import traceback
-                    traceback.print_exc()
-                    summary = f"This TCFD climate risk report provides a comprehensive analysis for the {industry} industry. The report includes 7 tables covering transformation risks, physical risks, opportunities, metrics and targets, systemic risk control, and operational resilience. Based on current carbon emission data (Total: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e) and revenue data ({revenue_str}), this report offers strategic insights for climate risk management and sustainable development."
-                    st.error(f"❌ LLM 調用失敗: {error_msg}")
-                    st.info("💡 請檢查：1) API Key 是否正確 2) 網絡連接 3) 查看終端輸出中的詳細錯誤信息")
-                    # 不停止執行，使用默認摘要繼續
-            else:
-                api_key_for_summary = st.session_state.get("claude_api_key") or ""
-                if api_key_for_summary:
-                    try:
-                        from shared.engine.tcfd.main import call_claude_api
-                        summary_prompt = f"""Please write a 250-word summary for the following TCFD climate risk report:
-
-Industry: {industry}
-Total Carbon Emissions: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e
-Revenue: {revenue_str}
-
-The report contains 7 tables covering: Transformation Risks, Physical Risks, Opportunities (Resource & Energy Efficiency, Products & Services), Metrics and Targets, Systemic Risk Control, and Operational Resilience.
-
-Please write a concise summary in English, approximately 250 words, that highlights the key climate risks, opportunities, and strategic recommendations for the {industry} industry based on the TCFD framework analysis."""
-                        summary = call_claude_api(summary_prompt, api_key_for_summary)
-                        summary = summary.split('\n\n')[0].strip()
-                        if len(summary.split()) > 300:
-                            words = summary.split()[:250]
-                            summary = ' '.join(words) + "..."
-                    except Exception as e:
-                        summary = f"This TCFD climate risk report provides a comprehensive analysis for the {industry} industry. The report includes 7 tables covering transformation risks, physical risks, opportunities, metrics and targets, systemic risk control, and operational resilience. Based on current carbon emission data (Total: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e) and revenue data ({revenue_str}), this report offers strategic insights for climate risk management and sustainable development."
-                else:
-                    summary = f"This TCFD climate risk report provides a comprehensive analysis for the {industry} industry. The report includes 7 tables covering transformation risks, physical risks, opportunities, metrics and targets, systemic risk control, and operational resilience. Based on current carbon emission data (Total: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e) and revenue data ({revenue_str}), this report offers strategic insights for climate risk management and sustainable development."
+                print(f"[DEBUG] 調用 Claude API 生成摘要，API Key 長度: {len(api_key)}")
+                summary = call_claude_api(summary_prompt, api_key)
+                print(f"[DEBUG] Claude API 調用成功，摘要長度: {len(summary)}")
+                summary = summary.split('\n\n')[0].strip()
+                if len(summary.split()) > 300:
+                    words = summary.split()[:250]
+                    summary = ' '.join(words) + "..."
+                st.success("✅ LLM 摘要生成成功")
+            except Exception as e:
+                error_msg = str(e)
+                print(f"[ERROR] Claude API 調用失敗: {error_msg}")
+                import traceback
+                traceback.print_exc()
+                st.error(f"❌ LLM 調用失敗: {error_msg}")
+                st.info("💡 請檢查：1) API Key 是否正確 2) 網絡連接 3) 查看終端輸出中的詳細錯誤信息")
+                st.stop()
             
             # 步驟 2: 生成 PPTX
             status_text.text("Step 2/3: Generating TCFD tables (this may take a few minutes)...")
@@ -228,10 +198,8 @@ Please write a concise summary in English, approximately 250 words, that highlig
             
             # 調試信息
             print(f"[DEBUG] 調用 generate_combined_pptx:")
-            print(f"  - use_api: {use_api}")
             print(f"  - api_key exists: {bool(api_key)}")
             print(f"  - api_key length: {len(api_key) if api_key else 0}")
-            print(f"  - use_mock: {not use_api}")
             
             try:
                 output_file = generate_combined_pptx(
@@ -240,9 +208,9 @@ Please write a concise summary in English, approximately 250 words, that highlig
                     industry=industry,
                     revenue=revenue_str,
                     carbon_emission=carbon_emission,
-                    llm_api_key=api_key if use_api else None,
-                    llm_provider="anthropic" if use_api else None,
-                    use_mock=not use_api  # 如果 use_api=False，則 use_mock=True
+                    llm_api_key=api_key,  # 必須提供 API Key
+                    llm_provider="anthropic",  # 使用 Anthropic
+                    use_mock=False  # 不使用 Mock
                 )
             except Exception as gen_error:
                 # 捕獲生成過程中的異常
@@ -424,16 +392,13 @@ if st.button("🚀 Generate TCFD Tables", type="primary", use_container_width=Tr
     # 確保導入 generate_combined_pptx
     from shared.engine.tcfd import generate_combined_pptx
     
-    # 從 sidebar 獲取數據源選擇
-    data_source = st.session_state.get("data_source", "Mock Data")
-    use_api = (data_source == "Claude API")
-    
-    # 獲取 API Key（從 sidebar）
+    # 獲取 API Key（必須配置）
     api_key = st.session_state.get("claude_api_key") or ""
     
-    # 如果選擇 Claude API 但沒有 API Key，顯示警告
-    if use_api and not api_key:
-        st.warning("⚠️ 請在左側 sidebar 輸入 Claude API Key")
+    # 如果沒有 API Key，顯示錯誤並停止
+    if not api_key:
+        st.error("❌ API Key 未配置！")
+        st.info("💡 請在左側 sidebar 的 API Configuration 中配置 Claude API Key")
         st.stop()
     
     # 獲取數據
@@ -444,13 +409,11 @@ if st.button("🚀 Generate TCFD Tables", type="primary", use_container_width=Tr
     revenue_currency = estimated_revenue.get("currency", "USD")
     revenue_str = f"{revenue_k:.0f}K {revenue_currency}" if revenue_k > 0 else "N/A"
 
-    with st.spinner(f"正在生成 TCFD 報告...({'使用 Claude API' if use_api else '使用 Mock 數據'})"):
+    with st.spinner("正在生成 TCFD 報告...（使用 Claude API）"):
         # 1. 生成摘要（使用 LLM API，輸出英文）
-        if use_api:
-            # 使用 Claude API 生成英文摘要
-            try:
-                from shared.engine.tcfd.main import call_claude_api
-                summary_prompt = f"""Please write a 250-word summary for the following TCFD climate risk report:
+        try:
+            from shared.engine.tcfd.main import call_claude_api
+            summary_prompt = f"""Please write a 250-word summary for the following TCFD climate risk report:
 
 Industry: {industry}
 Total Carbon Emissions: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e
@@ -459,42 +422,19 @@ Revenue: {revenue_str}
 The report contains 7 tables covering: Transformation Risks, Physical Risks, Opportunities (Resource & Energy Efficiency, Products & Services), Metrics and Targets, Systemic Risk Control, and Operational Resilience.
 
 Please write a concise summary in English, approximately 250 words, that highlights the key climate risks, opportunities, and strategic recommendations for the {industry} industry based on the TCFD framework analysis."""
-                summary = call_claude_api(summary_prompt, api_key)
-                # 清理摘要，確保大約 250 字
-                summary = summary.split('\n\n')[0].strip()
-                # 如果超過 300 字，截斷到合適的長度
-                if len(summary.split()) > 300:
-                    words = summary.split()[:250]
-                    summary = ' '.join(words) + "..."
-            except Exception as e:
-                summary = f"This TCFD climate risk report provides a comprehensive analysis for the {industry} industry. The report includes 7 tables covering transformation risks, physical risks, opportunities, metrics and targets, systemic risk control, and operational resilience. Based on current carbon emission data (Total: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e) and revenue data ({revenue_str}), this report offers strategic insights for climate risk management and sustainable development."
-                st.warning(f"Summary generation failed, using default summary: {str(e)}")
-        else:
-            # 使用 Mock 數據時，也使用 LLM API 生成英文摘要（如果 API Key 可用）
-            api_key_for_summary = st.session_state.get("claude_api_key") or ""
-            if api_key_for_summary:
-                try:
-                    from shared.engine.tcfd.main import call_claude_api
-                    summary_prompt = f"""Please write a 250-word summary for the following TCFD climate risk report:
-
-Industry: {industry}
-Total Carbon Emissions: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e
-Revenue: {revenue_str}
-
-The report contains 7 tables covering: Transformation Risks, Physical Risks, Opportunities (Resource & Energy Efficiency, Products & Services), Metrics and Targets, Systemic Risk Control, and Operational Resilience.
-
-Please write a concise summary in English, approximately 250 words, that highlights the key climate risks, opportunities, and strategic recommendations for the {industry} industry based on the TCFD framework analysis."""
-                    summary = call_claude_api(summary_prompt, api_key_for_summary)
-                    summary = summary.split('\n\n')[0].strip()
-                    if len(summary.split()) > 300:
-                        words = summary.split()[:250]
-                        summary = ' '.join(words) + "..."
-                except Exception as e:
-                    # 如果 API 調用失敗，使用英文默認摘要
-                    summary = f"This TCFD climate risk report provides a comprehensive analysis for the {industry} industry. The report includes 7 tables covering transformation risks, physical risks, opportunities, metrics and targets, systemic risk control, and operational resilience. Based on current carbon emission data (Total: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e) and revenue data ({revenue_str}), this report offers strategic insights for climate risk management and sustainable development."
-            else:
-                # 如果沒有 API Key，使用英文默認摘要
-                summary = f"This TCFD climate risk report provides a comprehensive analysis for the {industry} industry. The report includes 7 tables covering transformation risks, physical risks, opportunities, metrics and targets, systemic risk control, and operational resilience. Based on current carbon emission data (Total: {carbon_emission.get('total_tco2e', 'N/A') if carbon_emission else 'N/A'} tCO2e) and revenue data ({revenue_str}), this report offers strategic insights for climate risk management and sustainable development."
+            summary = call_claude_api(summary_prompt, api_key)
+            # 清理摘要，確保大約 250 字
+            summary = summary.split('\n\n')[0].strip()
+            # 如果超過 300 字，截斷到合適的長度
+            if len(summary.split()) > 300:
+                words = summary.split()[:250]
+                summary = ' '.join(words) + "..."
+            st.success("✅ LLM 摘要生成成功")
+        except Exception as e:
+            error_msg = str(e)
+            st.error(f"❌ LLM 調用失敗: {error_msg}")
+            st.info("💡 請檢查：1) API Key 是否正確 2) 網絡連接 3) 查看終端輸出中的詳細錯誤信息")
+            st.stop()
         
         # 2. 生成包含 7 個表格的 PPTX（使用 handdrawppt.pptx 模板）
         try:
@@ -510,9 +450,9 @@ Please write a concise summary in English, approximately 250 words, that highlig
                 industry=industry,
                 revenue=revenue_str,
                 carbon_emission=carbon_emission,
-                llm_api_key=api_key if use_api else None,
-                llm_provider="anthropic" if use_api else None,
-                use_mock=not use_api
+                llm_api_key=api_key,  # 必須提供 API Key
+                llm_provider="anthropic",  # 使用 Anthropic
+                use_mock=False  # 不使用 Mock
             )
             
             if not output_file or not output_file.exists():
