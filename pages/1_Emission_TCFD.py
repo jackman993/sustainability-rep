@@ -238,9 +238,11 @@ Please write a concise summary in English, approximately 250 words, that highlig
                 try:
                     file_size = output_file.stat().st_size
                     file_size_kb = file_size / 1024
-                st.info(f"📦 **File confirmed**: `{output_file}`\n\n"
-                        f"📊 **File size**: {file_size_kb:.2f} KB")
-                except:
+                    st.info(
+                        f"📦 **File confirmed**: `{output_file}`\n\n"
+                        f"📊 **File size**: {file_size_kb:.2f} KB"
+                    )
+                except Exception:
                     pass
             
             if output_file is None:
