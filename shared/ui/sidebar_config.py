@@ -18,19 +18,26 @@ def render_sidebar_config():
             
             # 優先級 1: Streamlit secrets
             try:
-                api_key = st.secrets.get("ANTHROPIC_API_KEY", None)
-            except:
-                pass
+                if hasattr(st, 'secrets'):
+                    api_key = st.secrets.get("ANTHROPIC_API_KEY", None)
+                    if api_key:
+                        print(f"[API_KEY] 從 secrets 讀取成功")
+            except Exception as e:
+                print(f"[API_KEY] 讀取 secrets 失敗: {e}")
             
             # 優先級 2: 環境變數
             if not api_key:
                 api_key = os.getenv("ANTHROPIC_API_KEY", None)
+                if api_key:
+                    print(f"[API_KEY] 從環境變數讀取成功")
             
             # 如果找到，保存到 session_state 並鎖定
             if api_key:
                 st.session_state.claude_api_key = api_key
                 st.session_state.api_key_locked = True
-                print(f"[API_KEY] 從 secrets/環境變數自動讀取並鎖定")
+                print(f"[API_KEY] 已保存到 session_state 並鎖定")
+            else:
+                print(f"[API_KEY] 未找到 secrets 或環境變數")
         
         # Data Source Selection (簡化版：只有 Mock 和 API 兩個選項)
         data_source = st.radio(
