@@ -25,3 +25,6 @@ output/
 # OS
 .DS_Store
 Thumbs.db
+
+# Streamlit secrets (包含敏感信息)
+.streamlit/secrets.toml

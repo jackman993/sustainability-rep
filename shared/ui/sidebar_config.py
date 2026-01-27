@@ -3,12 +3,34 @@ Shared Sidebar Configuration Component
 Used across all pages for API key and mode configuration
 """
 import streamlit as st
+import os
 
 
 def render_sidebar_config():
     """Render API configuration in sidebar (shared across all pages)"""
     with st.sidebar:
         st.header("🔑 API Configuration")
+        
+        # ========== 自動讀取 API Key（優先級：session_state > secrets > 環境變數） ==========
+        if 'claude_api_key' not in st.session_state or not st.session_state.get('api_key_locked', False):
+            # 第一次運行或未鎖定：嘗試從 secrets/環境變數讀取
+            api_key = None
+            
+            # 優先級 1: Streamlit secrets
+            try:
+                api_key = st.secrets.get("ANTHROPIC_API_KEY", None)
+            except:
+                pass
+            
+            # 優先級 2: 環境變數
+            if not api_key:
+                api_key = os.getenv("ANTHROPIC_API_KEY", None)
+            
+            # 如果找到，保存到 session_state 並鎖定
+            if api_key:
+                st.session_state.claude_api_key = api_key
+                st.session_state.api_key_locked = True
+                print(f"[API_KEY] 從 secrets/環境變數自動讀取並鎖定")
         
         # Data Source Selection (簡化版：只有 Mock 和 API 兩個選項)
         data_source = st.radio(
@@ -22,25 +44,33 @@ def render_sidebar_config():
         
         st.divider()
         
-        # Claude API Key Input (只在選擇 Claude API 時顯示)
+        # Claude API Key Display/Input (只在選擇 Claude API 時顯示)
         if data_source == "Claude API":
             st.subheader("Claude API Settings")
             
-            # API Key input (password type for security)
-            api_key_input = st.text_input(
-                "Claude API Key",
-                value="",
-                type="password",
-                help="Enter your Anthropic Claude API key. Get one at https://console.anthropic.com/",
-                key="claude_api_key"
-            )
-            
-            # Show status
-            if st.session_state.get("claude_api_key"):
+            # 檢查是否已鎖定（從 secrets/環境變數自動配置）
+            if st.session_state.get("api_key_locked", False) and st.session_state.get("claude_api_key"):
+                # 已鎖定：只顯示狀態，不顯示輸入框
                 masked_key = st.session_state.claude_api_key[:8] + "..." + st.session_state.claude_api_key[-4:] if len(st.session_state.claude_api_key) > 12 else "***"
-                st.success(f"✅ API Key saved: {masked_key}")
+                st.success(f"✅ API Key 已自動配置: {masked_key}")
+                st.caption("💡 API Key 已從配置自動讀取，無需手動輸入")
             else:
-                st.warning("⚠️ Please enter your Claude API key")
+                # 未鎖定：顯示輸入框（本地開發或手動輸入）
+                api_key_input = st.text_input(
+                    "Claude API Key",
+                    value=st.session_state.get("claude_api_key", ""),
+                    type="password",
+                    help="Enter your Anthropic Claude API key. Get one at https://console.anthropic.com/",
+                    key="claude_api_key_input"
+                )
+                
+                if api_key_input:
+                    st.session_state.claude_api_key = api_key_input
+                    st.session_state.api_key_locked = True
+                    st.success("✅ API Key 已保存")
+                    st.rerun()
+                else:
+                    st.warning("⚠️ Please enter your Claude API key or configure in secrets.toml")
         else:
             st.info("ℹ️ Mock Data mode: No API key required")
         
