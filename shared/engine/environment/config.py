@@ -4,8 +4,12 @@ ESG Environment Chapter Report Generator - Configuration File
 import os
 
 # API Settings
-ANTHROPIC_API_KEY = "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"
-CLAUDE_MODEL = "claude-sonnet-4-20250514"  # Using Claude Sonnet 4 (consistent with TCFD Generator)
+# NOTE:
+# - Do NOT hardcode secrets here in production.
+# - Environment chapter now uses the shared key management via get_claude_api_key().
+# - These values are kept only as legacy placeholders and are not referenced by the Streamlit flow.
+ANTHROPIC_API_KEY = ""
+CLAUDE_MODEL = "claude-sonnet-4-20250514"  # Using Claude Sonnet 4 (kept for legacy CLI tools)
 
 # Path Settings (using absolute paths to ensure correct cross-directory calls)
 import pathlib
